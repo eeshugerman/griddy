@@ -1,4 +1,11 @@
-(use-modules (oop goops))
+(use-modules (oop goops)
+             (chickadee)
+             (chickadee math vector))
+
+(define *time-step* 1/60)
+
+(define (l2 v1 v2)
+  (vec2-magnitude (vec2- v1 v2)))
 
 (define (slot-push! obj slot val)
   ;; todo: try `set-cdr!'?
@@ -6,107 +13,108 @@
          (new-list (cons val old-list)))
     (slot-set! obj slot new-list)))
 
-(define-class <world> ()
-  (x-size
-   #:init-keyword #:x-size
-   #:getter get-x-size)
-  (y-size
-   #:init-keyword #:y-size
-   #:getter get-y-size)
-  (grid
-   #:getter get-grid)
-  (road-junctions
-   #:init-form '()
-   #:getter get-road-junctions)
-  (road-segments
-   #:init-form '()
-   #:getter get-road-segments)
-  (actors
-   #:init-form '()
-   #:getter get-actors))
-
-(define-method (initialize (self <world>) . args)
-  (next-method)
-  (let ((grid (make-array *unspecified* (get-x-size self) (get-y-size self))))
-    (array-map! grid (lambda () (make <tile>)))
-    (slot-set! self 'grid grid))
-  self)
-
-(define-method (get-tile (w <world>) (x <integer>) (y <integer>))
-  (array-ref (get-grid w) x y))
-
-(define-class <tile> ()
-  (road-junction
-   #:getter get-road-junction)
-  (road-segments
-   #:init-form '()
-   #:getter get-road-segments)
-  (actors
-   #:init-form '()
-   #:getter get-actors))
-
 (define-class <road-junction> ()
-  (x-pos
-   #:init-keyword #:x
-   #:getter get-x-pos)
-  (y-pos
-   #:init-keyword #:y
-   #:getter get-y-pos)
+  (position ;; vec2
+   #:init-keyword position
+   #:accessor position)
   (segments
    #:init-form '()
-   #:getter get-segments))
+   #:getter segments))
 
 (define-class <road-segment> ()
-  (start-junction #:getter get-start-junction)
-  (stop-junction #:getter get-stop-junction)
+  (start-junction #:getter start-junction)
+  (stop-junction #:getter stop-junction)
   (lanes
    #:init-keyword #:lanes
-   #:init-form '(1 . 1)))
+   #:init-form '(1 . 1))
+  (length
+   #:getter length
+   #:allocation #:virtual
+   #:slot-ref (lambda (self)
+                (l2 (position (start-junction self))
+                    (position (stop-junction self))))
+   #:slot-set! (lambda (_ _)
+                 error "`(length <road-segment>)' is read-only")))
 
 (define-method (link! (j1 <road-junction>)
                       (s <road-segment>)
                       (j2 <road-junction>))
-  (unless (or (= (get-x-pos j1) (get-x-pos j2))
-              (= (get-y-pos j1) (get-y-pos j2)))
-    (error "diagonal road segments are not supported"))
   (slot-push! j1 'segments s)
   (slot-push! j2 'segments s)
   (slot-set! s 'start-junction j1)
   (slot-set! s 'stop-junction j2))
 
+(define-class <location> ()
+  (road-segment
+   #:init-keyword road-segment
+   #:accessor road-segment)
+  (road-lane
+   #:init-keyword road-lane
+   #:accessor road-lane)
+  (s ;; distance travelled along segment
+   #:init-form 0.0
+   #:init-keyword progress
+   #:accessor progress)
+  (direction
+   #:init-form 'forward
+   #:init-keyword direction
+   #:accessor direction)
+  ;; (position
+  ;;  #:allocation #:virtual)
+  )
+
+(define-class <actor> ()
+  (location
+   #:init-keyword location
+   #:getter location)
+  (max-speed
+   #:init-keyword max-speed
+   #:getter max-speed)
+  (agenda
+   #:init-thunk (lambda () (make-agenda))
+   #:accessor agenda))
+
+(define-class <world> ()
+  (road-junctions
+   #:init-form '()
+   #:getter road-junctions)
+  (road-segments
+   #:init-form '()
+   #:getter road-segments)
+  (actors
+   #:init-form '()
+   #:getter actors))
+
 (define-method (add! (w <world>) (j <road-junction>))
-  (slot-push! w 'road-junctions j)
-  (slot-set! (get-tile w (get-x-pos j) (get-y-pos j))
-             'road-junction
-             j))
+  (slot-push! w 'road-junctions j))
 
 (define-method (add! (w <world>) (s <road-segment>))
   (unless (and (slot-bound? s 'start-junction)
                (slot-bound? s 'stop-junction))
     (error "road segment must be linked to two junctions"))
-  (slot-push! w 'road-segments s)
-  (let ((start-x (get-x-pos (get-start-junction s)))
-        (start-y (get-y-pos (get-start-junction s)))
-        (stop-x (get-x-pos (get-stop-junction s)))
-        (stop-y (get-y-pos (get-stop-junction s))))
-    (cond
-     ((= start-x stop-x)
-      (do ((y (1+ start-y) (1+ y))
-           (x start-x))
-          ((>= y stop-y))
-        (slot-push! (get-tile w x y) 'road-segments s)))
-     ((= start-y stop-y)
-      (do ((x (1+ start-x) (1+ x))
-           (y start-y))
-          ((>= x stop-x))
-        (slot-push! (get-tile w x y) 'road-segments s)))
-     (else
-      (error "encountered diagonal road segment")))))
+  (slot-push! w 'road-segments s))
 
+(define-method (advance! (s <road-segment>) (a <actor>))
+  (let* ((speed (max-speed a))
+         (distance (* speed *time-step*))
+         (direction (direction (location a)))
+         (op (case direction
+               (('forward) +)
+               (('backward) -)))
+         (new-loc (op (s (location a)))))
+    (match (cons direction new-loc))
+      (('backward . (? negative?))
+       (do-next-thing))
+      (('backward . _)
+       (set! (s (location a)) new-loc))
+      (('forward . (? (lambda (x) (> x (length s)))))
+       (set! (s (location a)) new-loc))
+      (('forward . _)
+       (do-next-thing))))
 
 ; ---------------------------------------------------------
 
-(define world (make <world> #:x-size 10 #:y-size 10))
+(define world (make <world>))
 
 (let ((j1 (make <road-junction> #:x 0 #:y 0))
       (j2 (make <road-junction> #:x 0 #:y 9))
@@ -115,3 +123,4 @@
   (add! world j1)
   (add! world j2)
   (add! world s))
+
