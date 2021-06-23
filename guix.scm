@@ -1,0 +1,17 @@
+;; guix environment --load=guix.scm
+(use-modules (guix gexp)
+             (guix packages)
+             (guix build-system guile)
+             (gnu packages guile)
+             (gnu packages guile-xyz))
+(package
+ (name "gritty")
+ (version "0.0.1")
+ (source (local-file (dirname (current-filename))))
+ (build-system guile-build-system)
+ (synopsis "")
+ (description "")
+ (license "")
+ (home-page "")
+ (inputs `(("guile" ,guile-3.0)
+           ("guile-pfds" ,guile-pfds))))
