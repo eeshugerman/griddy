@@ -3,6 +3,7 @@
              (pfds queues))
 
 (define (l2 v1 v2)
+  (define (square x) (expt x 2))
   (let ((dx (- (car v1) (car v2)))
         (dy (- (cdr v1) (cdr v2))))
     (sqrt (+ (square dx) (square dy)))))
@@ -25,10 +26,10 @@
   segment
   (actors
    #:accessor actors
-   #:init-thunk (make-bbtree
-                 (lambda (a1 a2)
-                   (> (lane-s (location a1))
-                      (lane-s (location a1)))))))
+   #:init-form (make-bbtree
+                (lambda (a1 a2)
+                  (> (lane-s (location a1))
+                     (lane-s (location a1)))))))
 
 (define-class <road-segment> ()
   (start-junction #:getter start-junction)
@@ -36,7 +37,7 @@
   (lanes
    #:getter lanes
    #:init-keyword #:lanes
-   #:init-thunk `((frwd . ,(list (make <road-lane>)))
+   #:init-form `((frwd . ,(list (make <road-lane>)))
                   (bkwd . ,(list (make <road-lane>)))))
   (length
    #:getter length
@@ -44,8 +45,8 @@
    #:slot-ref (lambda (self)
                 (l2 (position (start-junction self))
                     (position (stop-junction self))))
-   #:slot-set! (lambda (_ _)
-                 error "`(length <road-segment>)' is read-only")))
+   #:slot-set! (lambda (_self _val)
+                 (throw 'read-only '(length <road-segment>)))))
 
 (define-method (initialize (self <road-segment>))
   (define (set-segment! lane)
@@ -106,10 +107,10 @@
 (define-method (add! (w <world>) (s <road-segment>))
   (unless (and (slot-bound? s 'start-junction)
                (slot-bound? s 'stop-junction))
-    (error "road segment must be linked to two junctions"))
+    (throw 'unlinked-road-segment))
   (slot-push! w 'road-segments s))
 
---------------------------------------------------------
+;; --------------------------------------------------------
 
 (define world (make <world>))
 
