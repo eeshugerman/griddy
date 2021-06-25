@@ -1,4 +1,4 @@
-;; guix environment --load=guix.scm
+;; guix environment --load=.guix.scm
 (use-modules (guix gexp)
              (guix packages)
              (guix build-system guile)
@@ -15,4 +15,6 @@
  (home-page "")
  (inputs `(("guile" ,guile-3.0)
            ("pfds" ,guile-pfds)
-           ("picture-language" ,guile-picture-language))))
+           ("picture-language" ,guile-picture-language)
+           ;; needed for picture-language to work?
+           ("readline" ,guile-readline))))
