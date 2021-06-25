@@ -38,15 +38,11 @@
    #:getter lanes
    #:init-keyword #:lanes
    #:init-form `((frwd . ,(list (make <road-lane>)))
-                  (bkwd . ,(list (make <road-lane>)))))
-  (length
-   #:getter length
-   #:allocation #:virtual
-   #:slot-ref (lambda (self)
-                (l2 (position (start-junction self))
-                    (position (stop-junction self))))
-   #:slot-set! (lambda (_self _val)
-                 (throw 'read-only '(length <road-segment>)))))
+                  (bkwd . ,(list (make <road-lane>))))))
+
+(define-method (length-of (rs <road-segment>))
+  (l2 (position (start-junction rs))
+      (position (stop-junction rs))))
 
 (define-method (initialize (self <road-segment>))
   (define (set-segment! lane)
@@ -121,4 +117,3 @@
   (add! world j1)
   (add! world j2)
   (add! world s))
-
