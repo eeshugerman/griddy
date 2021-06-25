@@ -14,4 +14,5 @@
  (license "")
  (home-page "")
  (inputs `(("guile" ,guile-3.0)
-           ("guile-pfds" ,guile-pfds))))
+           ("pfds" ,guile-pfds)
+           ("picture-language" ,guile-picture-language))))
