@@ -2,6 +2,7 @@
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
   #:use-module (pfds queues)
+  #:use-module (gritty math)
   #:export (<road-junction>
             <road-lane>
             <road-segment>
@@ -15,12 +16,6 @@
             pos-x
             pos-y
             road-junctions))
-
-(define (l2 x1 y1 x2 y2)
-  (define (square x) (expt x 2))
-  (let ((dx (- x1 x2))
-        (dy (- y1 y2)))
-    (sqrt (+ (square dx) (square dy)))))
 
 (define (slot-push! obj slot val)
   ;; todo: try `set-cdr!'?

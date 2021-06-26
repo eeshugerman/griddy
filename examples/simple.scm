@@ -22,9 +22,7 @@
   (add! world j2)
   (add! world s))
 
-(let ((j1 (make <road-junction> #:x 30 #:y 30))
-      (j2 (make <road-junction> #:x 60 #:y 60)))
-  (add! world j1)
-  (add! world j2))
+(let ((j1 (make <road-junction> #:x 50 #:y 50)))
+  (add! world j1))
 
 (draw world)
