@@ -8,13 +8,18 @@
             <location>
             <actor>
             <world>
+            size-x
+            size-y
             link!
-            add!))
+            add!
+            pos-x
+            pos-y
+            road-junctions))
 
-(define (l2 v1 v2)
+(define (l2 x1 y1 x2 y2)
   (define (square x) (expt x 2))
-  (let ((dx (- (car v1) (car v2)))
-        (dy (- (cdr v1) (cdr v2))))
+  (let ((dx (- x1 x2))
+        (dy (- y1 y2)))
     (sqrt (+ (square dx) (square dy)))))
 
 (define (slot-push! obj slot val)
@@ -24,9 +29,12 @@
     (slot-set! obj slot new-list)))
 
 (define-class <road-junction> ()
-  (position ;; (x . y)
-   #:init-keyword #:position
-   #:accessor position)
+  (pos-x
+   #:init-keyword #:x
+   #:accessor pos-x)
+  (pos-y
+   #:init-keyword #:y
+   #:accessor pos-y)
   (segments
    #:init-form '()
    #:getter segments))
@@ -56,8 +64,10 @@
   (for-each set-segment! (assoc-ref 'bkwd (lanes self))))
 
 (define-method (length-of (rs <road-segment>))
-  (l2 (position (start-junction rs))
-      (position (stop-junction rs))))
+  (l2 (pos-x (start-junction rs))
+      (pos-y (start-junction rs))
+      (pos-x (stop-junction rs))
+      (pos-y (stop-junction rs))))
 
 (define-class <location> ()
   (road-lane
@@ -87,6 +97,12 @@
    #:accessor route))
 
 (define-class <world> ()
+  (size-x
+   #:init-value 0
+   #:getter size-x)
+  (size-y
+   #:init-value 0
+   #:getter size-y)
   (road-junctions
    #:init-form '()
    #:getter road-junctions)
@@ -106,7 +122,11 @@
   (slot-set! s 'stop-junction j2))
 
 (define-method (add! (w <world>) (j <road-junction>))
-  (slot-push! w 'road-junctions j))
+  (slot-push! w 'road-junctions j)
+  (if (> (pos-x j) (size-x w))
+      (slot-set! w 'size-x (pos-x j)))
+  (if (> (pos-y j) (size-y w))
+      (slot-set! w 'size-y (pos-y j))))
 
 (define-method (add! (w <world>) (s <road-segment>))
   (unless (and (slot-bound? s 'start-junction)
