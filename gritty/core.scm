@@ -1,4 +1,5 @@
 (define-module (gritty core)
+  #:use-module (srfi srfi-1)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
   #:use-module (pfds queues)
@@ -106,17 +107,13 @@
    #:getter max-speed)
   (route
    #:init-form (make-queue)
-   #:accessor route)
-  (pos-x
-   #:getter pos-x
-   #:allocation #:virtual
-   #:slot-ref (lambda (self) (pos-x (location self)))
-   #:slot-set! (lambda (self val) (raise 'read-only)))
-  (pos-y
-   #:getter pos-y
-   #:allocation #:virtual
-   #:slot-ref (lambda (self) (pos-y (location self)))
-   #:slot-set! (lambda (self val) (raise 'read-only))))
+   #:accessor route))
+
+(define-method (pos-x (actor <actor>))
+  (pos-x (location actor)))
+
+(define-method (pos-y (actor <actor>))
+  (pos-y (location actor)))
 
 (define-class <world> ()
   (size-x
@@ -130,15 +127,21 @@
    #:getter road-junctions)
   (road-segments
    #:init-form '()
-   #:getter road-segments)
-  (road-lanes
-   ;;; todo: do we really need this? just for consistency...
-   #:init-form '()
-   #:getter road-lanes)
-  (actors
-   #:init-form '()
-   #:getter actors))
+   #:getter road-segments))
 
+(define-method (actors (world <world>))
+  (define (segment-into-lanes segment lanes)
+    (append lanes
+            (forward-lanes segment)
+            (backward-lanes segment)))
+
+  (define (lane-into-actors lane actors-)
+    (append actors-
+            (map cdr (bbtree->alist (actors lane)))))
+
+  (fold lane-into-actors '()
+        (fold segment-into-lanes '()
+              (road-segments world))))
 
 (define-method (link! (lane <road-lane>) (segment <road-segment>) direction)
   (if (slot-bound? lane 'segment)
@@ -180,15 +183,3 @@
            (null? (backward-lanes segment)))
       (throw 'road-segment-has-no-lanes))
   (slot-push! world 'road-segments segment))
-
-(define-method (add! (world <world>) (lane <road-lane>))
-  (unless (slot-bound? lane 'segment)
-    (throw 'road-lane-has-no-segment))
-  (slot-push! world 'road-lanes lane))
-
-(define-method (add! (world <world>) (actor <actor>))
-  (unless (slot-bound? actor 'location)
-    (throw 'actor-missing-location))
-  (slot-push! world 'actors actor))
-
-

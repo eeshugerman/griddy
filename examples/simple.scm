@@ -40,10 +40,6 @@
          junction-2
          junction-3
          segment-1
-         segment-2
-         lane-1
-         lane-2
-         lane-3
-         actor-1)))
+         segment-2)))
 
 (draw world)
