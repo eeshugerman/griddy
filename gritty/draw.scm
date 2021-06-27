@@ -8,7 +8,11 @@
 
 (define *draw/road-junction/size* 50)
 (define *draw/road-junction/color* "grey")
-(define *draw/road-segment/width* 40)
+(define *draw/road-segment/width* 50)
+(define *draw/road-segment/color* "grey")
+(define *draw/actor/size* 10)
+(define *draw/actor/color* "yellow")
+
 
 (define (square size)
   (rectangle size size))
@@ -22,13 +26,18 @@
         (pos-y (start-junction s))
         (pos-x (stop-junction s))
         (pos-y (stop-junction s))
-        #:stroke-width *draw/road-segment/width*))
+        #:stroke-width *draw/road-segment/width*
+        #:color *draw/road-segment/color*))
 
-(define-method (draw-over (j <road-junction>) base-pict)
-  (let* ((junction-pict (draw j))
-         (x (- (pos-x j)
+(define-method (draw (a <actor>))
+  (disk *draw/actor/size*
+        #:color *draw/actor/color*))
+
+(define-method (draw-over (objs <1d>) base-pict)
+  (let* ((junction-pict (draw objs))
+         (x (- (pos-x objs)
                (/2 (pict-width junction-pict))))
-         (y (- (pos-y j)
+         (y (- (pos-y objs)
                (/2 (pict-height junction-pict)))))
     (pin-over base-pict x y junction-pict)))
 
@@ -37,8 +46,8 @@
         (segment-pict (draw s)))
     (pin-over base-pict offset offset segment-pict)))
 
-(define (draw-many-over items base-pict)
-  (fold draw-over base-pict items))
+(define (draw-many-over objs base-pict)
+  (fold draw-over base-pict objs))
 
 (define-method (draw (w <world>))
   (let* ((world-pict
@@ -47,6 +56,7 @@
           (fold draw-many-over
                 world-pict
                 (list (road-segments w)
-                      (road-junctions w)))))
+                      (road-junctions w)
+                      (actors w)))))
     populated-world-pict))
 

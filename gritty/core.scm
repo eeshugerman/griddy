@@ -3,12 +3,14 @@
   #:use-module (pfds bbtrees)
   #:use-module (pfds queues)
   #:use-module (gritty math)
-  #:export (<road-junction>
+  #:export (<1d>
+            <road-junction>
             <road-lane>
             <road-segment>
             <location>
             <actor>
             <world>
+            actors
             size-x
             size-y
             link!
@@ -18,7 +20,12 @@
             road-junctions
             road-segments
             start-junction
-            stop-junction))
+            stop-junction
+            forward-lanes
+            backward-lanes
+            location
+            road-lane
+            segment))
 
 (define (slot-push! obj slot val)
   ;; todo: try `set-cdr!'?
@@ -26,40 +33,51 @@
          (new-list (cons val old-list)))
     (slot-set! obj slot new-list)))
 
-(define-class <road-junction> ()
+(define-class <1d> ()
+  pos-x
+  pos-y)
+
+(define-class <road-junction> (<1d>)
   (pos-x
    #:init-keyword #:x
-   #:accessor pos-x)
+   #:getter pos-x)
   (pos-y
    #:init-keyword #:y
-   #:accessor pos-y)
+   #:getter pos-y)
   (segments
    #:init-form '()
    #:getter segments))
 
 (define-class <road-lane> ()
-  segment
+  (segment
+   #:getter segment)
   (actors
-   #:accessor actors
+   #:getter actors
    #:init-form (make-bbtree
                 (lambda (a1 a2)
-                  (> (lane-s (location a1))
-                     (lane-s (location a1)))))))
+                  (> (pos-param (location a1))
+                     (pos-param (location a2)))))))
 
 (define-class <road-segment> ()
   (start-junction #:getter start-junction)
   (stop-junction #:getter stop-junction)
-  (lanes
-   #:getter lanes
-   #:init-keyword #:lanes
-   #:init-form `((frwd . ,(list (make <road-lane>)))
-                  (bkwd . ,(list (make <road-lane>))))))
+  (forward-lanes
+   #:accessor forward-lanes
+   #:init-keyword #:forward-lanes
+   #:init-form (list (make <road-lane>)))
+  (backward-lanes
+   #:accessor backward-lanes
+   #:init-keyword #:backward-lanes
+   #:init-form (list (make <road-lane>))))
 
-(define-method (initialize (self <road-segment>))
-  (define (set-segment! lane)
-    (slot-set! lane 'segment self))
-  (for-each set-segment! (assoc-ref 'frwd (lanes self)))
-  (for-each set-segment! (assoc-ref 'bkwd (lanes self))))
+;; can't figure out how to import/export this properly
+;; so using a `link!' instead
+;; (define-method (initialize (self <road-segment>) args)
+;;   (next-method)
+;;   (define (set-segment! lane)
+;;     (slot-set! lane 'segment self))
+;;   (for-each set-segment! (forward-lanes self))
+;;   (for-each set-segment! (backward-lanes self)))
 
 (define-method (length-of (rs <road-segment>))
   (l2 (pos-x (start-junction rs))
@@ -70,20 +88,25 @@
 (define-class <location> ()
   (road-lane
    #:init-keyword #:road-lane
-   #:accessor road-lane)
-  (lane-s ;; 0..1
+   #:getter road-lane)
+  (pos-param ;; 0..1
    #:init-form 0.0
-   #:init-keyword #:lane-s
-   #:accessor lane-s)
-  (direction
-   #:init-form 'forward
-   #:init-keyword #:direction
-   #:accessor direction)
-  ;; (position
-  ;;  #:allocation #:virtual)
-  )
+   #:init-keyword #:pos-param
+   #:getter pos-param))
 
-(define-class <actor> ()
+(define-method (pos-x (l <location>))
+  (let* ((road-segment (segment (road-lane l)))
+         (x1 (pos-x (start-junction road-segment)))
+         (x2 (pos-x (stop-junction road-segment))))
+    (+ x1 (* (pos-param l) (- x2 x1)))))
+
+(define-method (pos-y (l <location>))
+  (let* ((road-segment (segment (road-lane l)))
+         (y1 (pos-y (start-junction road-segment)))
+         (y2 (pos-y (stop-junction road-segment))))
+    (+ y1 (* (pos-param l) (- y2 y1)))))
+
+(define-class <actor> (<1d>)
   (location
    #:init-keyword #:location
    #:getter location)
@@ -92,7 +115,17 @@
    #:getter max-speed)
   (route
    #:init-form (make-queue)
-   #:accessor route))
+   #:accessor route)
+  (pos-x
+   #:getter pos-x
+   #:allocation #:virtual
+   #:slot-ref (lambda (self) (pos-x (location self)))
+   #:slot-set! (lambda (self val) (raise 'read-only)))
+  (pos-y
+   #:getter pos-y
+   #:allocation #:virtual
+   #:slot-ref (lambda (self) (pos-y (location self)))
+   #:slot-set! (lambda (self val) (raise 'read-only))))
 
 (define-class <world> ()
   (size-x
@@ -107,9 +140,24 @@
   (road-segments
    #:init-form '()
    #:getter road-segments)
+  (road-lanes
+   ;;; todo: do we really need this? just for consistency...
+   #:init-form '()
+   #:getter road-lanes)
   (actors
    #:init-form '()
    #:getter actors))
+
+
+(define-method (link! (l <road-lane>)
+                      (s <road-segment>)
+                      direction)
+  (if (slot-bound? l 'segment)
+      (throw 'lane-already-linked))
+  (slot-set! l 'segment s)
+  (case direction
+    ((forward) (slot-push! s 'forward-lanes l))
+    ((backward) (slot-push! s 'backward-lanes l))))
 
 (define-method (link! (j1 <road-junction>)
                       (s <road-segment>)
@@ -118,6 +166,15 @@
   (slot-push! j2 'segments s)
   (slot-set! s 'start-junction j1)
   (slot-set! s 'stop-junction j2))
+
+(define-method (link! (a <actor>) (l <road-lane>) pos-param)
+  (let ((loc (make <location>
+               #:road-lane l
+               #:pos-param pos-param)))
+    (slot-set! a 'location loc)
+    (slot-set! l
+               'actors
+               (bbtree-set (actors l) pos-param a))))
 
 (define-method (add! (w <world>) (j <road-junction>))
   (slot-push! w 'road-junctions j)
@@ -130,4 +187,19 @@
   (unless (and (slot-bound? s 'start-junction)
                (slot-bound? s 'stop-junction))
     (throw 'unlinked-road-segment))
+  (if (and (null? (forward-lanes s))
+           (null? (backward-lanes s)))
+      (throw 'road-segment-has-no-lanes))
   (slot-push! w 'road-segments s))
+
+(define-method (add! (w <world>) (l <road-lane>))
+  (unless (slot-bound? l 'segment)
+    (throw 'road-lane-has-no-segment))
+  (slot-push! w 'road-lanes l))
+
+(define-method (add! (w <world>) (a <actor>))
+  (unless (slot-bound? a 'location)
+    (throw 'actor-missing-location))
+  (slot-push! w 'actors a))
+
+
