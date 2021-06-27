@@ -15,7 +15,10 @@
             add!
             pos-x
             pos-y
-            road-junctions))
+            road-junctions
+            road-segments
+            start-junction
+            stop-junction))
 
 (define (slot-push! obj slot val)
   ;; todo: try `set-cdr!'?
