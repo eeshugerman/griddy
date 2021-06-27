@@ -17,46 +17,47 @@
 (define (square size)
   (rectangle size size))
 
-(define-method (draw (j <road-junction>))
+(define-method (draw (junction <road-junction>))
   (fill (square *draw/road-junction/size*)
         *draw/road-junction/color*))
 
-(define-method (draw (s <road-segment>))
-  (line (pos-x (start-junction s))
-        (pos-y (start-junction s))
-        (pos-x (stop-junction s))
-        (pos-y (stop-junction s))
+(define-method (draw (segment <road-segment>))
+  (line (pos-x (start-junction segment))
+        (pos-y (start-junction segment))
+        (pos-x (stop-junction segment))
+        (pos-y (stop-junction segment))
         #:stroke-width *draw/road-segment/width*
         #:color *draw/road-segment/color*))
 
-(define-method (draw (a <actor>))
+(define-method (draw (actor <actor>))
   (disk *draw/actor/size*
         #:color *draw/actor/color*))
 
-(define-method (draw-over (objs <1d>) base-pict)
-  (let* ((junction-pict (draw objs))
-         (x (- (pos-x objs)
+(define-method (draw-over (obj <point-like>) base-pict)
+  (let* ((junction-pict (draw obj))
+         (x (- (pos-x obj)
                (/2 (pict-width junction-pict))))
-         (y (- (pos-y objs)
+         (y (- (pos-y obj)
                (/2 (pict-height junction-pict)))))
     (pin-over base-pict x y junction-pict)))
 
-(define-method (draw-over (s <road-segment>) base-pict)
+(define-method (draw-over (segment <road-segment>) base-pict)
   (let ((offset (exact->inexact (/ *draw/road-segment/width* 4)))
-        (segment-pict (draw s)))
+        (segment-pict (draw segment)))
     (pin-over base-pict offset offset segment-pict)))
 
 (define (draw-many-over objs base-pict)
   (fold draw-over base-pict objs))
 
-(define-method (draw (w <world>))
+(define-method (draw (world <world>))
   (let* ((world-pict
-          (remove-outline (rectangle (size-x w) (size-y w))))
+          (remove-outline (rectangle (size-x world)
+                                     (size-y world))))
          (populated-world-pict
           (fold draw-many-over
                 world-pict
-                (list (road-segments w)
-                      (road-junctions w)
-                      (actors w)))))
+                (list (road-segments world)
+                      (road-junctions world)
+                      (actors world)))))
     populated-world-pict))
 

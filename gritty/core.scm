@@ -3,7 +3,7 @@
   #:use-module (pfds bbtrees)
   #:use-module (pfds queues)
   #:use-module (gritty math)
-  #:export (<1d>
+  #:export (<point-like>
             <road-junction>
             <road-lane>
             <road-segment>
@@ -33,11 +33,11 @@
          (new-list (cons val old-list)))
     (slot-set! obj slot new-list)))
 
-(define-class <1d> ()
+(define-class <point-like> ()
   pos-x
   pos-y)
 
-(define-class <road-junction> (<1d>)
+(define-class <road-junction> (<point-like>)
   (pos-x
    #:init-keyword #:x
    #:getter pos-x)
@@ -70,15 +70,6 @@
    #:init-keyword #:backward-lanes
    #:init-form (list (make <road-lane>))))
 
-;; can't figure out how to import/export this properly
-;; so using a `link!' instead
-;; (define-method (initialize (self <road-segment>) args)
-;;   (next-method)
-;;   (define (set-segment! lane)
-;;     (slot-set! lane 'segment self))
-;;   (for-each set-segment! (forward-lanes self))
-;;   (for-each set-segment! (backward-lanes self)))
-
 (define-method (length-of (rs <road-segment>))
   (l2 (pos-x (start-junction rs))
       (pos-y (start-junction rs))
@@ -94,19 +85,19 @@
    #:init-keyword #:pos-param
    #:getter pos-param))
 
-(define-method (pos-x (l <location>))
-  (let* ((road-segment (segment (road-lane l)))
+(define-method (pos-x (loc <location>))
+  (let* ((road-segment (segment (road-lane loc)))
          (x1 (pos-x (start-junction road-segment)))
          (x2 (pos-x (stop-junction road-segment))))
-    (+ x1 (* (pos-param l) (- x2 x1)))))
+    (+ x1 (* (pos-param loc) (- x2 x1)))))
 
-(define-method (pos-y (l <location>))
-  (let* ((road-segment (segment (road-lane l)))
+(define-method (pos-y (loc <location>))
+  (let* ((road-segment (segment (road-lane loc)))
          (y1 (pos-y (start-junction road-segment)))
          (y2 (pos-y (stop-junction road-segment))))
-    (+ y1 (* (pos-param l) (- y2 y1)))))
+    (+ y1 (* (pos-param loc) (- y2 y1)))))
 
-(define-class <actor> (<1d>)
+(define-class <actor> (<point-like>)
   (location
    #:init-keyword #:location
    #:getter location)
@@ -149,57 +140,55 @@
    #:getter actors))
 
 
-(define-method (link! (l <road-lane>)
-                      (s <road-segment>)
-                      direction)
-  (if (slot-bound? l 'segment)
+(define-method (link! (lane <road-lane>) (segment <road-segment>) direction)
+  (if (slot-bound? lane 'segment)
       (throw 'lane-already-linked))
-  (slot-set! l 'segment s)
+  (slot-set! lane 'segment segment)
   (case direction
-    ((forward) (slot-push! s 'forward-lanes l))
-    ((backward) (slot-push! s 'backward-lanes l))))
+    ((forward) (slot-push! segment 'forward-lanes lane))
+    ((backward) (slot-push! segment 'backward-lanes lane))))
 
-(define-method (link! (j1 <road-junction>)
-                      (s <road-segment>)
-                      (j2 <road-junction>))
-  (slot-push! j1 'segments s)
-  (slot-push! j2 'segments s)
-  (slot-set! s 'start-junction j1)
-  (slot-set! s 'stop-junction j2))
+(define-method (link! (junction-1 <road-junction>)
+                      (segment <road-segment>)
+                      (junction-2 <road-junction>))
+  (slot-push! junction-1 'segments segment)
+  (slot-push! junction-2 'segments segment)
+  (slot-set! segment 'start-junction junction-1)
+  (slot-set! segment 'stop-junction junction-2))
 
-(define-method (link! (a <actor>) (l <road-lane>) pos-param)
+(define-method (link! (actor <actor>) (lane <road-lane>) pos-param)
   (let ((loc (make <location>
-               #:road-lane l
+               #:road-lane lane
                #:pos-param pos-param)))
-    (slot-set! a 'location loc)
-    (slot-set! l
+    (slot-set! actor 'location loc)
+    (slot-set! lane
                'actors
-               (bbtree-set (actors l) pos-param a))))
+               (bbtree-set (actors lane) pos-param actor))))
 
-(define-method (add! (w <world>) (j <road-junction>))
-  (slot-push! w 'road-junctions j)
-  (if (> (pos-x j) (size-x w))
-      (slot-set! w 'size-x (pos-x j)))
-  (if (> (pos-y j) (size-y w))
-      (slot-set! w 'size-y (pos-y j))))
+(define-method (add! (world <world>) (junction <road-junction>))
+  (slot-push! world 'road-junctions junction)
+  (if (> (pos-x junction) (size-x world))
+      (slot-set! world 'size-x (pos-x junction)))
+  (if (> (pos-y junction) (size-y world))
+      (slot-set! world 'size-y (pos-y junction))))
 
-(define-method (add! (w <world>) (s <road-segment>))
-  (unless (and (slot-bound? s 'start-junction)
-               (slot-bound? s 'stop-junction))
+(define-method (add! (world <world>) (segment <road-segment>))
+  (unless (and (slot-bound? segment 'start-junction)
+               (slot-bound? segment 'stop-junction))
     (throw 'unlinked-road-segment))
-  (if (and (null? (forward-lanes s))
-           (null? (backward-lanes s)))
+  (if (and (null? (forward-lanes segment))
+           (null? (backward-lanes segment)))
       (throw 'road-segment-has-no-lanes))
-  (slot-push! w 'road-segments s))
+  (slot-push! world 'road-segments segment))
 
-(define-method (add! (w <world>) (l <road-lane>))
-  (unless (slot-bound? l 'segment)
+(define-method (add! (world <world>) (lane <road-lane>))
+  (unless (slot-bound? lane 'segment)
     (throw 'road-lane-has-no-segment))
-  (slot-push! w 'road-lanes l))
+  (slot-push! world 'road-lanes lane))
 
-(define-method (add! (w <world>) (a <actor>))
-  (unless (slot-bound? a 'location)
+(define-method (add! (world <world>) (actor <actor>))
+  (unless (slot-bound? actor 'location)
     (throw 'actor-missing-location))
-  (slot-push! w 'actors a))
+  (slot-push! world 'actors actor))
 
 

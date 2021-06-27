@@ -7,52 +7,43 @@
 
 (define world (make <world>))
 
-(let ((j1 (make <road-junction> #:x 0 #:y 500))
-      (j2 (make <road-junction> #:x 500 #:y 0)))
-  (add! world j1)
-  (add! world j2))
+(let ((junction-1 (make <road-junction> #:x 0 #:y 500))
+      (junction-2 (make <road-junction> #:x 500 #:y 0)))
+  (add! world junction-1)
+  (add! world junction-2))
 
-(let* ((j1 (make <road-junction> #:x 250 #:y 250))
-       (j2 (make <road-junction> #:x 250 #:y 400))
-       (j3 (make <road-junction> #:x 400 #:y 250))
+(let* ((junction-1 (make <road-junction> #:x 250 #:y 250))
+       (junction-2 (make <road-junction> #:x 250 #:y 400))
+       (junction-3 (make <road-junction> #:x 400 #:y 250))
 
-       (s1 (make <road-segment>))
-       (s2 (make <road-segment>))
+       (segment-1 (make <road-segment>))
+       (segment-2 (make <road-segment>))
 
-       (l1 (make <road-lane>))
-       (l2 (make <road-lane>))
-       (l3 (make <road-lane>))
+       (lane-1 (make <road-lane>))
+       (lane-2 (make <road-lane>))
+       (lane-3 (make <road-lane>))
 
-       (a1 (make <actor>)))
+       (actor-1 (make <actor>)))
 
-  (link! j1 s1 j2)
-  (link! j1 s2 j3)
+  (link! junction-1 segment-1 junction-2)
+  (link! junction-1 segment-2 junction-3)
 
-  (link! l1 s1 'forward)
-  (link! l2 s1 'backward)
-  (link! l3 s2 'forward)
+  (link! lane-1 segment-1 'forward)
+  (link! lane-2 segment-1 'backward)
+  (link! lane-3 segment-2 'forward)
 
-  (link! a1 l3 0.5)
+  (link! actor-1 lane-3 0.5)
 
-  (add! world j1)
-  (add! world j2)
-  (add! world j3)
-
-  (add! world s1)
-  (add! world s2)
-
-  (add! world a1)
-
-  (for-each (cut add! world <>)
-            (list
-             j1
-             j2
-             j3
-             s1
-             s2
-             l1
-             l2
-             l3
-             a1)))
+  (for-each
+   (cut add! world <>)
+   (list junction-1
+         junction-2
+         junction-3
+         segment-1
+         segment-2
+         lane-1
+         lane-2
+         lane-3
+         actor-1)))
 
 (draw world)
