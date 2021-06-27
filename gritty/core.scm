@@ -73,11 +73,11 @@
    #:init-keyword #:backward-lanes
    #:init-form (list (make <road-lane>))))
 
-(define-method (length-of (rs <road-segment>))
-  (l2 (get-pos-x (get-start-junction rs))
-      (get-pos-y (get-start-junction rs))
-      (get-pos-x (get-stop-junction rs))
-      (get-pos-y (get-stop-junction rs))))
+(define-method (length-of (segment <road-segment>))
+  (l2 (get-pos-x (get-start-junction segment))
+      (get-pos-y (get-start-junction segment))
+      (get-pos-x (get-stop-junction segment))
+      (get-pos-y (get-stop-junction segment))))
 
 (define-class <location> ()
   (road-lane
