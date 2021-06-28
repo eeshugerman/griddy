@@ -28,6 +28,16 @@
             get-road-lane
             segment))
 
+
+;; doesn't work
+(define-syntax get
+  (syntax-rules ()
+    ((get obj slots ... slot) ;; is this valid r7rs? guile?
+     (slot-ref (get obj slots ...) 'slot))
+    ((get obj slot)
+     (slot-ref obj 'slot))))
+
+
 (define (slot-push! obj slot val)
   ;; todo: try `set-cdr!'?
   (let* ((old-list (slot-ref obj slot))
