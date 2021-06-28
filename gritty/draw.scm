@@ -22,10 +22,10 @@
         *draw/road-junction/color*))
 
 (define-method (draw (segment <road-segment>))
-  (line (get-pos-x (get-start-junction segment))
-        (get-pos-y (get-start-junction segment))
-        (get-pos-x (get-stop-junction segment))
-        (get-pos-y (get-stop-junction segment))
+  (line (get segment 'start-junction 'pos-x)
+        (get segment 'start-junction 'pos-y)
+        (get segment 'stop-junction 'pos-x)
+        (get segment 'stop-junction 'pos-y)
         #:stroke-width *draw/road-segment/width*
         #:color *draw/road-segment/color*))
 
@@ -33,7 +33,7 @@
   (disk *draw/actor/size*
         #:color *draw/actor/color*))
 
-(define-method (draw-over (obj <point-like>) base-pict)
+(define-method (draw-over obj base-pict)
   (let* ((junction-pict (draw obj))
          (x (- (get-pos-x obj)
                (/2 (pict-width junction-pict))))
@@ -51,13 +51,13 @@
 
 (define-method (draw (world <world>))
   (let* ((world-pict
-          (remove-outline (rectangle (get-size-x world)
-                                     (get-size-y world))))
+          (remove-outline (rectangle (get world 'size-x)
+                                     (get world 'size-y))))
          (populated-world-pict
           (fold draw-many-over
                 world-pict
-                (list (get-road-segments world)
-                      (get-road-junctions world)
+                (list (get world 'road-segments)
+                      (get world 'road-junctions)
                       (get-actors world)))))
     populated-world-pict))
 

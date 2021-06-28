@@ -1,5 +1,6 @@
 (define-module (gritty core)
   #:use-module (srfi srfi-1)
+  #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
   #:use-module (pfds queues)
@@ -11,32 +12,28 @@
             <location>
             <actor>
             <world>
+            get
             get-actors
-            get-size-x
-            get-size-y
-            link!
-            add!
             get-pos-x
             get-pos-y
-            get-road-junctions
-            get-road-segments
-            get-start-junction
-            get-stop-junction
-            get-forward-lanes
-            get-backward-lanes
-            get-location
-            get-road-lane
+            link!
+            add!
             segment))
 
-
-;; doesn't work
-(define-syntax get
-  (syntax-rules ()
-    ((get obj slots ... slot) ;; is this valid r7rs? guile?
-     (slot-ref (get obj slots ...) 'slot))
-    ((get obj slot)
-     (slot-ref obj 'slot))))
-
+(define (get obj . slots)
+  ;; apparently `match' doesn't support tail patterns?
+  ;; (match slots
+  ;;   ((slots)
+  ;;    (slot-ref obj slot))
+  ;;   ((rest ... last)
+  ;;    (slot-ref (get obj rest ...) last)))
+  (define (but-last l) (drop-right l 1))
+  (cond
+   ((= 1 (length slots))
+    (slot-ref obj (car slots)))
+   (else
+    (slot-ref (apply get (cons obj (but-last slots)))
+              (last slots)))))
 
 (define (slot-push! obj slot val)
   ;; todo: try `set-cdr!'?
@@ -44,11 +41,7 @@
          (new-list (cons val old-list)))
     (slot-set! obj slot new-list)))
 
-(define-class <point-like> ()
-  pos-x
-  pos-y)
-
-(define-class <road-junction> (<point-like>)
+(define-class <road-junction> ()
   (pos-x
    #:init-keyword #:x
    #:getter get-pos-x)
@@ -56,38 +49,29 @@
    #:init-keyword #:y
    #:getter get-pos-y)
   (segments
-   #:init-form '()
-   #:getter get-segments))
+   #:init-form '()))
 
 (define-class <road-lane> ()
-  (segment
-   #:getter get-segment)
+  segment
   (actors
-   #:getter get-actors
    #:init-form (make-bbtree
-                (lambda (a1 a2)
-                  (> (get-pos-param (get-location a1))
-                     (get-pos-param (get-location a2)))))))
+                (lambda (actor-1 actor-2)
+                  (> (get actor-1 'location 'pos-param)
+                     (get actor-2 'location 'pos-param))))))
 
 (define-class <road-segment> ()
-  (start-junction
-   #:getter get-start-junction)
-  (stop-junction
-   #:getter get-stop-junction)
+  start-junction
+  stop-junction
   (forward-lanes
-   #:getter get-forward-lanes
-   #:init-keyword #:forward-lanes
-   #:init-form (list (make <road-lane>)))
+   #:init-form '())
   (backward-lanes
-   #:getter get-backward-lanes
-   #:init-keyword #:backward-lanes
-   #:init-form (list (make <road-lane>))))
+   #:init-form '()))
 
 (define-method (length-of (segment <road-segment>))
-  (l2 (get-pos-x (get-start-junction segment))
-      (get-pos-y (get-start-junction segment))
-      (get-pos-x (get-stop-junction segment))
-      (get-pos-y (get-stop-junction segment))))
+  (l2 (get segment 'start-junction 'pos-x)
+      (get segment 'start-junction 'pos-y)
+      (get segment 'stop-junction 'pos-x)
+      (get segment 'stop-junction 'pos-y)))
 
 (define-class <location> ()
   (road-lane
@@ -99,59 +83,51 @@
    #:getter get-pos-param))
 
 (define-method (get-pos-x (loc <location>))
-  (let* ((road-segment (get-segment (get-road-lane loc)))
-         (x1 (get-pos-x (get-start-junction road-segment)))
-         (x2 (get-pos-x (get-stop-junction road-segment))))
-    (+ x1 (* (get-pos-param loc) (- x2 x1)))))
+  (let* ((road-segment (get loc 'road-lane 'segment))
+         (x1 (get road-segment 'start-junction 'pos-x))
+         (x2 (get road-segment 'stop-junction 'pos-x)))
+    (+ x1 (* (get loc 'pos-param) (- x2 x1)))))
 
 (define-method (get-pos-y (loc <location>))
-  (let* ((road-segment (get-segment (get-road-lane loc)))
-         (y1 (get-pos-y (get-start-junction road-segment)))
-         (y2 (get-pos-y (get-stop-junction road-segment))))
-    (+ y1 (* (get-pos-param loc) (- y2 y1)))))
+  (let* ((road-segment (get loc 'road-lane 'segment))
+         (y1 (get road-segment 'start-junction 'pos-y))
+         (y2 (get road-segment 'stop-junction 'pos-y)))
+    (+ y1 (* (get loc 'pos-param) (- y2 y1)))))
 
-(define-class <actor> (<point-like>)
-  (location
-   #:init-keyword #:location
-   #:getter get-location)
+(define-class <actor> ()
+  location
   (max-speed
-   #:init-keyword #:max-speed
-   #:getter get-max-speed)
+   #:init-keyword #:max-speed)
   (route
-   #:init-form (make-queue)
-   #:accessor route))
+   #:init-form (make-queue)))
 
 (define-method (get-pos-x (actor <actor>))
-  (get-pos-x (get-location actor)))
+  (get-pos-x (get actor 'location)))
 
 (define-method (get-pos-y (actor <actor>))
-  (get-pos-y (get-location actor)))
+  (get-pos-y (get actor 'location)))
 
 (define-class <world> ()
   (size-x
-   #:init-value 0
-   #:getter get-size-x)
+   #:init-value 0)
   (size-y
-   #:init-value 0
-   #:getter get-size-y)
+   #:init-value 0)
   (road-junctions
-   #:init-form '()
-   #:getter get-road-junctions)
+   #:init-form '())
   (road-segments
-   #:init-form '()
-   #:getter get-road-segments))
+   #:init-form '()))
 
 (define-method (get-actors (world <world>))
   (define (segment-into-lanes segment lanes)
     (append lanes
-            (get-forward-lanes segment)
-            (get-backward-lanes segment)))
+            (get segment 'forward-lanes)
+            (get segment 'backward-lanes)))
   (define (lane-into-actors lane actors)
     (append actors
-            (map cdr (bbtree->alist (get-actors lane)))))
+            (map cdr (bbtree->alist (get lane 'actors)))))
   (fold lane-into-actors '()
         (fold segment-into-lanes '()
-              (get-road-segments world))))
+              (get world 'road-segments))))
 
 (define-method (link! (lane <road-lane>) (segment <road-segment>) direction)
   (if (slot-bound? lane 'segment)
@@ -176,20 +152,20 @@
     (slot-set! actor 'location
                loc)
     (slot-set! lane 'actors
-               (bbtree-set (get-actors lane) pos-param actor))))
+               (bbtree-set (slot-ref lane 'actors) pos-param actor))))
 
 (define-method (add! (world <world>) (junction <road-junction>))
   (slot-push! world 'road-junctions junction)
-  (if (> (get-pos-x junction) (get-size-x world))
-      (slot-set! world 'size-x (get-pos-x junction)))
-  (if (> (get-pos-y junction) (get-size-y world))
-      (slot-set! world 'size-y (get-pos-y junction))))
+  (if (> (get junction 'pos-x) (get world 'size-x))
+      (slot-set! world 'size-x (get junction 'pos-x )))
+  (if (> (get junction 'pos-y) (get world 'size-y))
+      (slot-set! world 'size-y (get junction 'pos-y ))))
 
 (define-method (add! (world <world>) (segment <road-segment>))
   (unless (and (slot-bound? segment 'start-junction)
                (slot-bound? segment 'stop-junction))
     (throw 'unlinked-road-segment))
-  (if (and (null? (get-forward-lanes segment))
-           (null? (get-backward-lanes segment)))
+  (if (and (null? (get segment 'forward-lanes))
+           (null? (get segment 'backward-lanes)))
       (throw 'road-segment-has-no-lanes))
   (slot-push! world 'road-segments segment))
