@@ -117,17 +117,21 @@
   (road-segments
    #:init-thunk list))
 
+
+(define-method (get-lanes (world <world>))
+  (fold (lambda (segment lanes)
+          (append lanes
+                  (-> segment 'forward-lanes)
+                  (-> segment 'backward-lanes)))
+        (list)
+        (-> world 'road-segments)))
+
 (define-method (get-actors (world <world>))
-  (define (segment-into-lanes segment lanes)
-    (append lanes
-            (-> segment 'forward-lanes)
-            (-> segment 'backward-lanes)))
-  (define (lane-into-actors lane actors)
-    (append actors
-            (map cdr (bbtree->alist (-> lane 'actors)))))
-  (fold lane-into-actors '()
-        (fold segment-into-lanes '()
-              (-> world 'road-segments))))
+  (fold (lambda (lane actors)
+          (append actors
+                  (map cdr (bbtree->alist (-> lane 'actors)))))
+        (list)
+        (get-lanes world)))
 
 (define-method (link! (lane <road-lane>) (segment <road-segment>) direction)
   (if (slot-bound? lane 'segment)
