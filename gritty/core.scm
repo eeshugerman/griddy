@@ -49,7 +49,7 @@
    #:init-keyword #:y
    #:getter get-pos-y)
   (segments
-   #:init-form '()))
+   #:init-thunk list))
 
 (define-class <road-lane> ()
   segment
@@ -63,9 +63,9 @@
   start-junction
   stop-junction
   (forward-lanes
-   #:init-form '())
+   #:init-thunk list)
   (backward-lanes
-   #:init-form '()))
+   #:init-thunk list))
 
 (define-method (length-of (segment <road-segment>))
   (l2 (-> segment 'start-junction 'pos-x)
@@ -78,7 +78,7 @@
    #:init-keyword #:road-lane
    #:getter get-road-lane)
   (pos-param ;; 0..1
-   #:init-form 0.0
+   #:init-value 0.0
    #:init-keyword #:pos-param
    #:getter get-pos-param))
 
@@ -99,7 +99,7 @@
   (max-speed
    #:init-keyword #:max-speed)
   (route
-   #:init-form (make-queue)))
+   #:init-thunk make-queue))
 
 (define-method (get-pos-x (actor <actor>))
   (get-pos-x (-> actor 'location)))
@@ -113,9 +113,9 @@
   (size-y
    #:init-value 0)
   (road-junctions
-   #:init-form '())
+   #:init-thunk list)
   (road-segments
-   #:init-form '()))
+   #:init-thunk list))
 
 (define-method (get-actors (world <world>))
   (define (segment-into-lanes segment lanes)
