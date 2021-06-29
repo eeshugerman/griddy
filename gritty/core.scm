@@ -173,7 +173,3 @@
            (null? (-> segment 'backward-lanes)))
       (throw 'road-segment-has-no-lanes))
   (slot-push! world 'road-segments segment))
-
-
-(define-method (advance (world <world>))
-  (let ((new-road-junctions (map advance (-> world 'road-junctions))))))
