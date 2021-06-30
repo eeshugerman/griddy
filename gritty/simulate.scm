@@ -1,30 +1,42 @@
 (define-module (gritty simulate)
   #:use-module (srfi srfi-26)
+  #:use-module (srfi srfi-69)
+  #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (gritty core)
+  #:use-module (gritty util)
+  ;; TODO: Better API. <simulation> class? closure-based iterator?
   #:export (get-first
             get-next))
 
-;; TODO: Better API. <simulation> class? closure-based iterator?
 
-(define (get-next-world-location current-world-location next-world)
-  ;; how??? is it possible?
-  ;; also, move into `get-next` so `next-world' param is not needed
-  )
+(define (make-next-static-getter current-world next-world)
+  (define lookup-table
+    (alist->hash-table
+     (zip-to-alist current-world next-world))
+  (lambda (current-world-item)
+    (hashq-ref lookup-table current-world-item)))
 
-(define (get-first (make-skeleton add-actors!))
-  (let ((world (make-skeleton)))
-    (add-actors! world)
-    world))
+(define-method (get-first ((make-skeleton <procedure>)
+                           (add-actors! <procedure>)))
+  (define world (make-skeleton))
+  (add-actors! world)
+  world)
 
-(define (get-next (make-skeleton current-world))
-  (let ((next-world (make-skeleton)))
+(define (get-next ((make-skeleton <procedure>) (current-world <world>)))
+  (let* ((next-world (make-skeleton))
+         (get-next-static (make-next-static-getter current-world next-world)))
     (for-each
-     (lambda (actor)
-       (let* ((current-world-location
-               (-> actor 'location))
-              (next-world-location
-               (get-next-world-location current-world-location next-world)))
-         ;; mutate `next-world' via `next-world-location'
-         (advance! actor next-world-location)))
-     (get-actors current-world))))
+     ;; mutate `next-world' via `static-item-table', inserting
+     ;; a new/next `actor'
+     (lambda (actor) (advance! actor get-next-static))
+     (get-actors current-world))
+    next-world))
+
+
+(define (advance! (actor <actor>) (get-next-static <procedure>))
+  (let* ((lane-current (-> actor 'location 'lane))
+         (lane-next (get-next-static lane-current))
+         (actor-next (copy actor))
+         (pos-param-next (+ 0.1 (-> actor 'location 'pos-param))))
+    (link! actor-next-world lane-lnext-world pos-param-next)))

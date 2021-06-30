@@ -47,6 +47,6 @@
 
 (define world (get-first make-skeleton add-actors!))
 (draw world)
-(set! world (get-next world))
+(set! world (get-next make-skeleton world))
 (sleep 5)
 (draw world)
