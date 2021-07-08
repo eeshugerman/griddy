@@ -1,4 +1,5 @@
-(define-module (gritty utils)
+(define-module (gritty util)
+  #:use-module (srfi srfi-1)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
   #:export (->
@@ -28,13 +29,15 @@
 
 
 (define (zip-to-alist list-1 list-2)
-  (let loop ((acc '()) (list-1* list-1) (list-2* list-2))
-    (match (list-1* list-2*)
-      ((() ())
+  (let loop ((acc '())
+             (list-1* list-1)
+             (list-2* list-2))
+    (match (cons list-1* list-2*)
+      ((() . ())
        acc)
-      ((or (() (_ ...)) ((_ ...) ()))
+      ((or (() . (_ ...)) ((_ ...) . ()))
        (throw 'list-have-different-lengths))
-      (((head-1 tail-1 ...) (head-2 tail-2 ...))
+      (((head-1 tail-1 ...) . (head-2 tail-2 ...))
        (loop (cons (cons head-1 head-2) acc)
              tail-1
              tail-2)))))

@@ -1,26 +1,30 @@
 (define-module (gritty core)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
   #:use-module (pfds queues)
+  #:use-module (gritty util)
   #:use-module (gritty math)
-  #:export (<point-like>
+  #:export (<actor>
+            <location>
+            <point-like>
             <road-junction>
             <road-lane>
             <road-segment>
-            <location>
-            <actor>
             <world>
-            ->
+            add!
+            copy
             get-actors
             get-pos-x
             get-pos-y
+            get-road-junctions
+            get-road-lanes
+            get-road-segments
             link!
-            add!
             segment))
 
-;; utils -----------------------------------------------------------------------
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
 
@@ -58,12 +62,10 @@
 
 (define-class <location> ()
   (road-lane
-   #:init-keyword #:road-lane
-   #:getter get-road-lane)
+   #:init-keyword #:road-lane)
   (pos-param ;; 0..1
    #:init-value 0.0
-   #:init-keyword #:pos-param
-   #:getter get-pos-param))
+   #:init-keyword #:pos-param))
 
 (define-method (get-pos-x (loc <location>))
   (let* ((road-segment (-> loc 'road-lane 'segment))
@@ -114,7 +116,7 @@
   (define (lane-into-actors lane actors)
     (append actors
             (map cdr (bbtree->alist (-> lane 'actors)))))
-  (fold lane-into-actors (list) (get-lanes world)))
+  (fold lane-into-actors (list) (get-road-lanes world)))
 
 
 ;; -----------------------------------------------------------------------------
@@ -143,7 +145,7 @@
     (slot-set! lane 'actors
                (bbtree-set (slot-ref lane 'actors) pos-param actor))))
 
-(define-method (add! (world <world>) (static-item <static-item>))
+(define-method (add! (world <world>) (static-item <static>))
   (slot-push! world 'static-items static-item))
 
 (define-method (add! (world <world>) (junction <road-junction>))
@@ -161,3 +163,13 @@
            (null? (-> segment 'backward-lanes)))
       (throw 'road-segment-has-no-lanes))
   (next-method))
+
+(define (set-if-bound! actor new-actor slot)
+  (if (slot-bound? actor slot)
+      (slot-set! new-actor slot (slot-ref actor slot))))
+
+(define-method (copy (actor <actor>))
+  (define new-actor (make <actor>))
+  (set-if-bound! actor new-actor 'max-speed)
+  (set-if-bound! actor new-actor 'route)
+  new-actor)

@@ -13,30 +13,31 @@
 (define (make-next-static-getter current-world next-world)
   (define lookup-table
     (alist->hash-table
-     (zip-to-alist current-world next-world))
+     (zip-to-alist (-> current-world 'static-items)
+                   (-> next-world 'static-items))
+     eq?))
   (lambda (current-world-item)
-    (hashq-ref lookup-table current-world-item)))
+    (hash-table-ref lookup-table current-world-item)))
 
-(define-method (get-first ((make-skeleton <procedure>)
-                           (add-actors! <procedure>)))
+(define-method (get-first (make-skeleton <procedure>) (add-actors! <procedure>))
   (define world (make-skeleton))
   (add-actors! world)
   world)
 
-(define (get-next ((make-skeleton <procedure>) (current-world <world>)))
+(define-method (get-next (make-skeleton <procedure>) (current-world <world>))
   (let* ((next-world (make-skeleton))
          (get-next-static (make-next-static-getter current-world next-world)))
     (for-each
-     ;; mutate `next-world' via `static-item-table', inserting
+     ;; mutate `next-world' via `get-next-static', inserting
      ;; a new/next `actor'
-     (lambda (actor) (advance! actor get-next-static))
+     (cut advance! <> get-next-static)
      (get-actors current-world))
     next-world))
 
 
-(define (advance! (actor <actor>) (get-next-static <procedure>))
-  (let* ((lane-current (-> actor 'location 'lane))
+(define-method (advance! (actor <actor>) (get-next-static <procedure>))
+  (let* ((lane-current (-> actor 'location 'road-lane))
          (lane-next (get-next-static lane-current))
          (actor-next (copy actor))
          (pos-param-next (+ 0.1 (-> actor 'location 'pos-param))))
-    (link! actor-next-world lane-lnext-world pos-param-next)))
+    (link! actor-next lane-next pos-param-next)))

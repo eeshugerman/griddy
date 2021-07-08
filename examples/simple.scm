@@ -3,9 +3,11 @@
 (use-modules (oop goops)
              (srfi srfi-26)
              (gritty core)
-             (gritty draw))
+             (gritty util)
+             (gritty draw)
+             (gritty simulate))
 
-(define make-skeleton ()
+(define (make-skeleton)
   (define world (make <world>))
 
   (let ((junction-1 (make <road-junction> #:x 0 #:y 500))
@@ -22,7 +24,7 @@
 
          (lane-1 (make <road-lane>))
          (lane-2 (make <road-lane>))
-         (lane-3 (make <road-lane>))
+         (lane-3 (make <road-lane>)))
 
 
     (link! junction-1 segment-1 junction-2)
@@ -37,16 +39,18 @@
                     junction-2
                     junction-3
                     segment-1
-                    segment-2))))
+                    segment-2
+                    lane-1
+                    lane-2
+                    lane-3)))
   world)
 
-(define add-actors! (world)
+(define (add-actors! world)
   (let ((actor-1 (make <actor>))
-        (lane-1 (-> world-skeleton)))
+        (lane-1 (car (get-road-lanes world))))
     (link! actor-1 lane-1 0.5)))
 
 (define world (get-first make-skeleton add-actors!))
 (draw world)
 (set! world (get-next make-skeleton world))
-(sleep 5)
 (draw world)

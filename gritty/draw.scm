@@ -2,6 +2,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
   #:use-module (pict)
+  #:use-module (gritty util)
   #:use-module (gritty core)
   #:use-module (gritty math)
   #:export (draw))
@@ -56,8 +57,8 @@
          (populated-world-pict
           (fold draw-many-over
                 world-pict
-                (list (-> world 'road-segments)
-                      (-> world 'road-junctions)
+                (list (get-road-segments world)
+                      (get-road-junctions world)
                       (get-actors world)))))
     populated-world-pict))
 
