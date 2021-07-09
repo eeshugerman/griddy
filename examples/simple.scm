@@ -7,6 +7,12 @@
              (gritty draw)
              (gritty simulate))
 
+(for-each (compose reload-module resolve-module)
+          '((gritty core)
+            (gritty util)
+            (gritty draw)
+            (gritty simulate)))
+
 (define (make-skeleton)
   (define world (make <world>))
 
