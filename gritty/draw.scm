@@ -47,18 +47,16 @@
         (segment-pict (draw segment)))
     (pin-over base-pict offset offset segment-pict)))
 
-(define (draw-many-over objs base-pict)
-  (fold draw-over base-pict objs))
-
 (define-method (draw (world <world>))
-  (let* ((world-pict
-          (remove-outline (rectangle (get world 'size-x)
-                                     (get world 'size-y))))
-         (populated-world-pict
-          (fold draw-many-over
-                world-pict
-                (list (get-road-segments world)
-                      (get-road-junctions world)
-                      (get-actors world)))))
-    populated-world-pict))
+  (define (draw-many-over objs base-pict)
+    (fold draw-over base-pict objs))
+
+  (define world-pict
+    (remove-outline (rectangle (get world 'size-x)
+                               (get world 'size-y))))
+  (fold draw-many-over
+        world-pict
+        (list (get-road-segments world)
+              (get-road-junctions world)
+              (get-actors world))))
 

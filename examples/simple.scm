@@ -2,6 +2,7 @@
 
 (use-modules (oop goops)
              (srfi srfi-26)
+             (pict)
              (gritty core)
              (gritty util)
              (gritty draw)
@@ -54,9 +55,9 @@
 (define (add-actors! world)
   (let ((actor-1 (make <actor>))
         (lane-1 (car (get-road-lanes world))))
-    (link! actor-1 lane-1 0.5)))
+    (link! actor-1 lane-1 0.3)))
 
 (define world (get-first make-skeleton add-actors!))
-(draw world)
+(pict->file (draw world) "foo-1.svg")
 (set! world (get-next make-skeleton world))
-(draw world)
+(pict->file (draw world) "foo-2.svg")
