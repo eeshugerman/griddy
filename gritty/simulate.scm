@@ -13,8 +13,8 @@
 (define (make-next-static-getter current-world next-world)
   (define lookup-table
     (alist->hash-table
-     (zip-to-alist (-> current-world 'static-items)
-                   (-> next-world 'static-items))
+     (zip-to-alist (get current-world 'static-items)
+                   (get next-world 'static-items))
      eq?))
   (lambda (current-world-item)
     (hash-table-ref lookup-table current-world-item)))
@@ -36,8 +36,8 @@
 
 
 (define-method (advance! (actor <actor>) (get-next-static <procedure>))
-  (let* ((lane-current (-> actor 'location 'road-lane))
+  (let* ((lane-current (get actor 'location 'road-lane))
          (lane-next (get-next-static lane-current))
          (actor-next (copy actor))
-         (pos-param-next (+ 0.1 (-> actor 'location 'pos-param))))
+         (pos-param-next (+ 0.1 (get actor 'location 'pos-param))))
     (link! actor-next lane-next pos-param-next)))

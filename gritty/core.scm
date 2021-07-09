@@ -43,8 +43,8 @@
   (actors
    #:init-form (make-bbtree
                 (lambda (actor-1 actor-2)
-                  (> (-> actor-1 'location 'pos-param)
-                     (-> actor-2 'location 'pos-param))))))
+                  (> (get actor-1 'location 'pos-param)
+                     (get actor-2 'location 'pos-param))))))
 
 (define-class <road-segment> (<static>)
   start-junction
@@ -55,10 +55,10 @@
    #:init-thunk list))
 
 (define-method (length-of (segment <road-segment>))
-  (l2 (-> segment 'start-junction 'pos-x)
-      (-> segment 'start-junction 'pos-y)
-      (-> segment 'stop-junction 'pos-x)
-      (-> segment 'stop-junction 'pos-y)))
+  (l2 (get segment 'start-junction 'pos-x)
+      (get segment 'start-junction 'pos-y)
+      (get segment 'stop-junction 'pos-x)
+      (get segment 'stop-junction 'pos-y)))
 
 (define-class <location> ()
   (road-lane
@@ -68,16 +68,16 @@
    #:init-keyword #:pos-param))
 
 (define-method (get-pos-x (loc <location>))
-  (let* ((road-segment (-> loc 'road-lane 'segment))
-         (x1 (-> road-segment 'start-junction 'pos-x))
-         (x2 (-> road-segment 'stop-junction 'pos-x)))
-    (+ x1 (* (-> loc 'pos-param) (- x2 x1)))))
+  (let* ((road-segment (get loc 'road-lane 'segment))
+         (x1 (get road-segment 'start-junction 'pos-x))
+         (x2 (get road-segment 'stop-junction 'pos-x)))
+    (+ x1 (* (get loc 'pos-param) (- x2 x1)))))
 
 (define-method (get-pos-y (loc <location>))
-  (let* ((road-segment (-> loc 'road-lane 'segment))
-         (y1 (-> road-segment 'start-junction 'pos-y))
-         (y2 (-> road-segment 'stop-junction 'pos-y)))
-    (+ y1 (* (-> loc 'pos-param) (- y2 y1)))))
+  (let* ((road-segment (get loc 'road-lane 'segment))
+         (y1 (get road-segment 'start-junction 'pos-y))
+         (y2 (get road-segment 'stop-junction 'pos-y)))
+    (+ y1 (* (get loc 'pos-param) (- y2 y1)))))
 
 (define-class <actor> ()
   location
@@ -87,10 +87,10 @@
    #:init-thunk make-queue))
 
 (define-method (get-pos-x (actor <actor>))
-  (get-pos-x (-> actor 'location)))
+  (get-pos-x (get actor 'location)))
 
 (define-method (get-pos-y (actor <actor>))
-  (get-pos-y (-> actor 'location)))
+  (get-pos-y (get actor 'location)))
 
 (define-class <world> ()
   (size-x
@@ -102,20 +102,20 @@
 
 (define-method (get-road-lanes (world <world>))
   (filter (cut is-a? <> <road-lane>)
-          (-> world 'static-items)))
+          (get world 'static-items)))
 
 (define-method (get-road-junctions (world <world>))
   (filter (cut is-a? <> <road-junction>)
-          (-> world 'static-items)))
+          (get world 'static-items)))
 
 (define-method (get-road-segments (world <world>))
   (filter (cut is-a? <> <road-segment>)
-          (-> world 'static-items)))
+          (get world 'static-items)))
 
 (define-method (get-actors (world <world>))
   (define (lane-into-actors lane actors)
     (append actors
-            (map cdr (bbtree->alist (-> lane 'actors)))))
+            (map cdr (bbtree->alist (get lane 'actors)))))
   (fold lane-into-actors (list) (get-road-lanes world)))
 
 
@@ -149,18 +149,18 @@
   (slot-push! world 'static-items static-item))
 
 (define-method (add! (world <world>) (junction <road-junction>))
-  (if (> (-> junction 'pos-x) (-> world 'size-x))
-      (slot-set! world 'size-x (-> junction 'pos-x )))
-  (if (> (-> junction 'pos-y) (-> world 'size-y))
-      (slot-set! world 'size-y (-> junction 'pos-y )))
+  (if (> (get junction 'pos-x) (get world 'size-x))
+      (slot-set! world 'size-x (get junction 'pos-x )))
+  (if (> (get junction 'pos-y) (get world 'size-y))
+      (slot-set! world 'size-y (get junction 'pos-y )))
   (next-method))
 
 (define-method (add! (world <world>) (segment <road-segment>))
   (unless (and (slot-bound? segment 'start-junction)
                (slot-bound? segment 'stop-junction))
     (throw 'unlinked-road-segment))
-  (if (and (null? (-> segment 'forward-lanes))
-           (null? (-> segment 'backward-lanes)))
+  (if (and (null? (get segment 'forward-lanes))
+           (null? (get segment 'backward-lanes)))
       (throw 'road-segment-has-no-lanes))
   (next-method))
 

@@ -2,7 +2,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
-  #:export (->
+  #:export (get
             slot-push!
             zip-to-alist))
 
@@ -12,13 +12,13 @@
          (new-list (cons val old-list)))
     (slot-set! obj slot new-list)))
 
-(define (-> obj . slots)
+(define (get obj . slots)
   ;; apparently `match' doesn't support tail patterns?
   ;; (match slots
   ;;   ((slots)
   ;;    (slot-ref obj slot))
   ;;   ((rest ... last)
-  ;;    (slot-ref (-> obj rest ...) last)))
+  ;;    (slot-ref (get obj rest ...) last)))
   (define (but-last l) (drop-right l 1))
   (cond
    ((= 1 (length slots))
