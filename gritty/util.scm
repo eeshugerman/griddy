@@ -1,16 +1,25 @@
 (define-module (gritty util)
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
+  #:use-module (pfds queues)
   #:use-module (ice-9 match)
   #:export (get
             slot-push!
             zip-to-alist))
 
+;; is this the best option?
+(define <queue> (class-of (make-queue)))
+
+(define-method (add-to (container <list>) val)
+  (cons val container))
+
+(define-method (add-to (container <queue>) val)
+  (enqueue container val))
 
 (define (slot-push! obj slot val)
-  (let* ((old-list (slot-ref obj slot))
-         (new-list (cons val old-list)))
-    (slot-set! obj slot new-list)))
+  (let* ((old-container (slot-ref obj slot))
+         (new-container (add-to old-container val)))
+    (slot-set! obj slot new-container)))
 
 (define (get obj . slots)
   ;; apparently `match' doesn't support tail patterns?
