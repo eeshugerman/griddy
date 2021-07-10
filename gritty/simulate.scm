@@ -9,6 +9,8 @@
   #:export (get-first
             get-next))
 
+(define *simulate/fps* 5)
+(define *simulate/time-step* (/ 1 *simulate/fps*))
 
 (define (make-next-static-getter current-world next-world)
   (define lookup-table
@@ -34,13 +36,45 @@
      (get-actors current-world))
     next-world))
 
-
 (define-method (advance! (actor <actor>) (get-next-static <procedure>))
-  (let* ((actor-next (copy actor))
-         (lane-current (get actor 'location 'road-lane))
-         (lane-next (get-next-static lane-current))
-         (pos-param-next (+ 0.1 (get actor 'location 'pos-param)))
-         (location-next (make <location>
-                          #:road-lane lane-next
-                          #:pos-param pos-param-next)))
-    (link! actor-next location-next)))
+
+  (define (do/=nil=)
+    (let* ((lane-current (get actor 'location 'road-lane))
+           (lane-next (get-next-static lane-current))
+           (actor-next (copy actor))
+           (location-next (make <location>
+                        #:road-lane lane-next
+                        #:pos-param (get actor 'location 'pos-param))))
+      (link! actor-next location-next)))
+
+  (define (do/arrive-at pos-param-target)
+    (let* ((lane-current (get actor 'location 'road-lane))
+           (lane-next (get-next-static lane-current))
+           (pos-param-current (get actor 'location 'pos-param))
+           (pos-param-delta (* *simulate/time-step*
+                               (/ (get actor 'max-speed)
+                                  (length-of (get lane-current 'segment)))))
+           (pos-param-to-go (- pos-param-target pos-param-current)))
+      (if (>= (abs pos-param-delta) (abs pos-param-to-go))
+          ;; arrived
+          (let ((actor-next (copy actor))
+                (location-next (make <location>
+                                 #:road-lane lane-next
+                                 #:pos-param pos-param-target)))
+            (slot-set! actor-next 'route '())
+            (link! actor-next location-next))
+          ;; still travelling
+          (let* ((actor-next (copy actor))
+                 (pos-param-next ((if (> pos-param-target pos-param-current) + -)
+                                  pos-param-current
+                                  pos-param-delta))
+                 (location-next (make <location>
+                                  #:road-lane lane-next
+                                  #:pos-param pos-param-next)))
+            (link! actor-next location-next)))))
+
+  (match (get actor 'route)
+    (()
+     (do/=nil=))
+    (((arrive-at target-pos-param) rest ...)
+     (do/arrive-at target-pos-param))))

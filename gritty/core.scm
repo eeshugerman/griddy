@@ -21,6 +21,7 @@
             get-road-junctions
             get-road-lanes
             get-road-segments
+            length-of
             link!
             segment
             set-route))
@@ -82,7 +83,8 @@
 (define-class <actor> ()
   location
   (max-speed
-   #:init-keyword #:max-speed)
+   #:init-keyword #:max-speed
+   #:init-val 25) ;; units / second
   (route
    #:init-thunk list
    #:setter set-route))

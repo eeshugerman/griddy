@@ -3,9 +3,12 @@
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
   #:use-module (ice-9 match)
-  #:export (get
+  #:export (first
+            get
             slot-add!
             zip-to-alist))
+
+(define first car)
 
 ;; is this the best option?
 (define <bbtree> (class-of (make-bbtree <)))
@@ -50,3 +53,4 @@
        (loop (cons (cons head-1 head-2) acc)
              tail-1
              tail-2)))))
+
