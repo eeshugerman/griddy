@@ -36,7 +36,7 @@
    ((= 1 (length slots))
     (slot-ref obj (car slots)))
    (else
-    (slot-ref (apply -> (cons obj (but-last slots)))
+    (slot-ref (apply get (cons obj (but-last slots)))
               (last slots)))))
 
 
