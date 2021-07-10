@@ -29,17 +29,16 @@
          (segment-1 (make <road-segment>))
          (segment-2 (make <road-segment>))
 
-         (lane-1 (make <road-lane>))
-         (lane-2 (make <road-lane>))
-         (lane-3 (make <road-lane>)))
-
+         (lane-1 (make <road-lane> #:direction 'forward))
+         (lane-2 (make <road-lane> #:direction 'backward))
+         (lane-3 (make <road-lane> #:direction 'forward)))
 
     (link! junction-1 segment-1 junction-2)
     (link! junction-1 segment-2 junction-3)
 
-    (link! lane-1 segment-1 'forward)
-    (link! lane-2 segment-1 'backward)
-    (link! lane-3 segment-2 'forward)
+    (link! lane-1 segment-1)
+    (link! lane-2 segment-1)
+    (link! lane-3 segment-2)
 
     (for-each (cut add! world <>)
               (list junction-1
@@ -56,9 +55,9 @@
   (let* ((lane (first (get-road-lanes world)))
          (location (make <location>
                      #:road-lane lane
-                     #:pos-param 0.3))
+                     #:pos-param 0.25))
          (actor (make <actor> #:max-speed 25)))
-    (set-route actor '((arrive-at 0.6)))
+    (set-route actor '((arrive-at 0.75)))
     (link! actor location)))
 
 (define world (get-first make-skeleton add-actors!))

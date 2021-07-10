@@ -41,6 +41,8 @@
 
 (define-class <road-lane> (<static>)
   segment
+  (direction  ;; 'forward or 'backward, relevant to segment
+   #:init-keyword #:direction)
   (actors
    #:init-form (make-bbtree
                 (lambda (actor-1 actor-2)
@@ -50,9 +52,7 @@
 (define-class <road-segment> (<static>)
   start-junction
   stop-junction
-  (forward-lanes
-   #:init-thunk list)
-  (backward-lanes
+  (lanes
    #:init-thunk list))
 
 (define-method (length-of (segment <road-segment>))
@@ -123,13 +123,11 @@
 
 
 ;; -----------------------------------------------------------------------------
-(define-method (link! (lane <road-lane>) (segment <road-segment>) direction)
+(define-method (link! (lane <road-lane>) (segment <road-segment>))
   (if (slot-bound? lane 'segment)
       (throw 'lane-already-linked))
   (slot-set! lane 'segment segment)
-  (case direction
-    ((forward) (slot-add! segment 'forward-lanes lane))
-    ((backward) (slot-add! segment 'backward-lanes lane))))
+  (slot-add! segment 'lanes lane))
 
 (define-method (link! (junction-1 <road-junction>)
                       (segment <road-segment>)
@@ -159,8 +157,7 @@
   (unless (and (slot-bound? segment 'start-junction)
                (slot-bound? segment 'stop-junction))
     (throw 'unlinked-road-segment))
-  (if (and (null? (get segment 'forward-lanes))
-           (null? (get segment 'backward-lanes)))
+  (if (null? (get segment 'lanes))
       (throw 'road-segment-has-no-lanes))
   (next-method))
 

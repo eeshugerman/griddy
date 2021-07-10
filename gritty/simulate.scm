@@ -43,8 +43,8 @@
            (lane-next (get-next-static lane-current))
            (actor-next (copy actor))
            (location-next (make <location>
-                        #:road-lane lane-next
-                        #:pos-param (get actor 'location 'pos-param))))
+                            #:road-lane lane-next
+                            #:pos-param (get actor 'location 'pos-param))))
       (link! actor-next location-next)))
 
   (define (do/arrive-at pos-param-target)
@@ -65,7 +65,9 @@
             (link! actor-next location-next))
           ;; still travelling
           (let* ((actor-next (copy actor))
-                 (pos-param-next ((if (> pos-param-target pos-param-current) + -)
+                 (pos-param-next ((case (get lane-current 'direction)
+                                    ((forward) +)
+                                    ((backward) -))
                                   pos-param-current
                                   pos-param-delta))
                  (location-next (make <location>
