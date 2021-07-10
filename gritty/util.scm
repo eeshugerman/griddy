@@ -4,7 +4,7 @@
   #:use-module (pfds queues)
   #:use-module (ice-9 match)
   #:export (get
-            slot-push!
+            slot-add!
             zip-to-alist))
 
 ;; is this the best option?
@@ -16,7 +16,7 @@
 (define-method (add-to (container <queue>) val)
   (enqueue container val))
 
-(define (slot-push! obj slot val)
+(define (slot-add! obj slot val)
   (let* ((old-container (slot-ref obj slot))
          (new-container (add-to old-container val)))
     (slot-set! obj slot new-container)))

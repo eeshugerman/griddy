@@ -125,14 +125,14 @@
       (throw 'lane-already-linked))
   (slot-set! lane 'segment segment)
   (case direction
-    ((forward) (slot-push! segment 'forward-lanes lane))
-    ((backward) (slot-push! segment 'backward-lanes lane))))
+    ((forward) (slot-add! segment 'forward-lanes lane))
+    ((backward) (slot-add! segment 'backward-lanes lane))))
 
 (define-method (link! (junction-1 <road-junction>)
                       (segment <road-segment>)
                       (junction-2 <road-junction>))
-  (slot-push! junction-1 'segments segment)
-  (slot-push! junction-2 'segments segment)
+  (slot-add! junction-1 'segments segment)
+  (slot-add! junction-2 'segments segment)
   (slot-set! segment 'start-junction junction-1)
   (slot-set! segment 'stop-junction junction-2))
 
@@ -146,7 +146,7 @@
                (bbtree-set (slot-ref lane 'actors) pos-param actor))))
 
 (define-method (add! (world <world>) (static-item <static>))
-  (slot-push! world 'static-items static-item))
+  (slot-add! world 'static-items static-item))
 
 (define-method (add! (world <world>) (junction <road-junction>))
   (if (> (get junction 'pos-x) (get world 'size-x))
@@ -164,12 +164,11 @@
       (throw 'road-segment-has-no-lanes))
   (next-method))
 
-(define (set-if-bound! actor new-actor slot)
-  (if (slot-bound? actor slot)
-      (slot-set! new-actor slot (slot-ref actor slot))))
-
 (define-method (copy (actor <actor>))
+  (define (copy-slot-if-bound! actor new-actor slot)
+    (if (slot-bound? actor slot)
+        (slot-set! new-actor slot (slot-ref actor slot))))
   (define new-actor (make <actor>))
-  (set-if-bound! actor new-actor 'max-speed)
-  (set-if-bound! actor new-actor 'route)
+  (copy-slot-if-bound! actor new-actor 'max-speed)
+  (copy-slot-if-bound! actor new-actor 'route)
   new-actor)
