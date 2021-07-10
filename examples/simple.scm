@@ -1,6 +1,7 @@
 ;;; GUILE_LOAD_PATH="$(pwd)" guile examples/simple.scm
 
 (use-modules (oop goops)
+             (srfi srfi-1)
              (srfi srfi-26)
              (pict)
              (gritty core)
@@ -37,7 +38,7 @@
     (link! junction-1 segment-2 junction-3)
 
     (link! lane-1 segment-1)
-    (link! lane-2 segment-1)
+    (link! lane-2 segment-2)
     (link! lane-3 segment-2)
 
     (for-each (cut add! world <>)
@@ -52,13 +53,20 @@
   world)
 
 (define (add-actors! world)
-  (let* ((lane (first (get-road-lanes world)))
-         (location (make <location>
-                     #:road-lane lane
-                     #:pos-param 0.25))
-         (actor (make <actor> #:max-speed 25)))
-    (set-route actor '((arrive-at 0.75)))
-    (link! actor location)))
+  (let* ((lane-1 (first (get-road-lanes world))) ;; forward
+         (actor-1 (make <actor>))
+         (location-1 (make <location> #:road-lane lane-1 #:pos-param 0.25))
+
+         (lane-2 (second (get-road-lanes world))) ;; backward
+         (actor-2 (make <actor>))
+         (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75)))
+
+    (link! actor-1 location-1)
+    (set-route actor-1 '((arrive-at 0.75)))
+
+    (link! actor-2 location-2)
+    (set-route actor-2 '((arrive-at 0.25)))
+    ))
 
 (define world (get-first make-skeleton add-actors!))
 ;; (draw world)

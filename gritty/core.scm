@@ -84,7 +84,7 @@
   location
   (max-speed
    #:init-keyword #:max-speed
-   #:init-val 25) ;; units / second
+   #:init-value 25) ;; units / second
   (route
    #:init-thunk list
    #:setter set-route))
