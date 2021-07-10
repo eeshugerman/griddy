@@ -4,7 +4,6 @@
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
-  #:use-module (pfds queues)
   #:use-module (gritty util)
   #:use-module (gritty math)
   #:export (<actor>
@@ -23,7 +22,8 @@
             get-road-lanes
             get-road-segments
             link!
-            segment))
+            segment
+            set-route))
 
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
@@ -84,7 +84,8 @@
   (max-speed
    #:init-keyword #:max-speed)
   (route
-   #:init-thunk make-queue))
+   #:init-thunk list
+   #:setter set-route))
 
 (define-method (get-pos-x (actor <actor>))
   (get-pos-x (get actor 'location)))

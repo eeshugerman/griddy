@@ -1,20 +1,20 @@
 (define-module (gritty util)
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
-  #:use-module (pfds queues)
+  #:use-module (pfds bbtrees)
   #:use-module (ice-9 match)
   #:export (get
             slot-add!
             zip-to-alist))
 
 ;; is this the best option?
-(define <queue> (class-of (make-queue)))
+(define <bbtree> (class-of (make-bbtree <)))
 
 (define-method (add-to (container <list>) val)
   (cons val container))
 
-(define-method (add-to (container <queue>) val)
-  (enqueue container val))
+(define-method (add-to (container <bbtree>) pair)
+  (bbtree-set container (car pair) (cdr pair)))
 
 (define (slot-add! obj slot val)
   (let* ((old-container (slot-ref obj slot))
