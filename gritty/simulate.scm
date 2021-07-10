@@ -36,8 +36,11 @@
 
 
 (define-method (advance! (actor <actor>) (get-next-static <procedure>))
-  (let* ((lane-current (get actor 'location 'road-lane))
+  (let* ((actor-next (copy actor))
+         (lane-current (get actor 'location 'road-lane))
          (lane-next (get-next-static lane-current))
-         (actor-next (copy actor))
-         (pos-param-next (+ 0.1 (get actor 'location 'pos-param))))
-    (link! actor-next lane-next pos-param-next)))
+         (pos-param-next (+ 0.1 (get actor 'location 'pos-param)))
+         (location-next (make <location>
+                          #:road-lane lane-next
+                          #:pos-param pos-param-next)))
+    (link! actor-next location-next)))

@@ -53,9 +53,12 @@
   world)
 
 (define (add-actors! world)
-  (let ((actor-1 (make <actor>))
-        (lane-1 (car (get-road-lanes world))))
-    (link! actor-1 lane-1 0.3)))
+  (let* ((lane (car (get-road-lanes world)))
+         (location (make <location>
+                     #:road-lane lane
+                     #:pos-param 0.3))
+         (actor (make <actor>)))
+    (link! actor location)))
 
 (define world (get-first make-skeleton add-actors!))
 (pict->file (draw world) "foo-1.svg")

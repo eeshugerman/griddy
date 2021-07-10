@@ -137,14 +137,11 @@
   (slot-set! segment 'start-junction junction-1)
   (slot-set! segment 'stop-junction junction-2))
 
-(define-method (link! (actor <actor>) (lane <road-lane>) pos-param)
-  (let ((loc (make <location>
-               #:road-lane lane
-               #:pos-param pos-param)))
-    (slot-set! actor 'location
-               loc)
-    (slot-set! lane 'actors
-               (bbtree-set (slot-ref lane 'actors) pos-param actor))))
+(define-method (link! (actor <actor>) (loc <location>))
+  (slot-set! actor 'location loc)
+  (slot-add! (get loc 'road-lane)
+             'actors
+             (cons (get loc 'pos-param) actor)))
 
 (define-method (add! (world <world>) (static-item <static>))
   (slot-add! world 'static-items static-item))
