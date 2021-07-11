@@ -69,8 +69,6 @@
     ))
 
 (define world (get-first make-skeleton add-actors!))
-;; (draw world)
-;; (pict->file (draw world) "foo-1.svg")
-;; (set! world (get-next make-skeleton world))
-;; (draw world)
-;; (pict->file (draw world) "foo-2.svg")
+(pict->file (draw world) "foo-1.svg")
+(set! world (get-next make-skeleton world))
+(pict->file (draw world) "foo-2.svg")

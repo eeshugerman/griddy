@@ -39,6 +39,23 @@
   (segments
    #:init-thunk list))
 
+(define-method (get-road-lanes (junction <road-junction>))
+  (fold (lambda (acc segment)
+          (append acc (get segment 'road-lanes)))
+        (list)))
+
+(define (is-sink? lane junction)
+  (or (and (eq? (get lane 'segment 'start-junction) junction)
+           (eq? (get lane 'direction) 'forward))
+      (and (eq? (get lane 'segment 'stop-junction) junction)
+           (eq? (get lane 'direction) 'backward))))
+
+(define-method (get-sinks (junction <road-junction>))
+  (filter is-sink? (get-road-lanes junction)))
+
+(define-method (get-sources (junction <road-junction>))
+  (filter (compose not is-sink?) (get-road-lanes junction)))
+
 (define-class <road-lane> (<static>)
   segment
   (direction  ;; 'forward or 'backward, relevant to segment
