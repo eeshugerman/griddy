@@ -5,7 +5,7 @@
              (gnu packages guile)
              (gnu packages guile-xyz))
 (package
- (name "gritty")
+ (name "griddy")
  (version "0.0.1")
  (source (local-file (dirname (current-filename))))
  (build-system guile-build-system)

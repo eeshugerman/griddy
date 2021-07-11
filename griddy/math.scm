@@ -1,4 +1,4 @@
-(define-module (gritty math) #:export(/2 l2))
+(define-module (griddy math) #:export(/2 l2))
 
 (define (/2 x) (/ x 2))
 

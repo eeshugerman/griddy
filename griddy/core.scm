@@ -1,11 +1,11 @@
-(define-module (gritty core)
+(define-module (griddy core)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
-  #:use-module (gritty util)
-  #:use-module (gritty math)
+  #:use-module (griddy util)
+  #:use-module (griddy math)
   #:export (<actor>
             <location>
             <point-like>

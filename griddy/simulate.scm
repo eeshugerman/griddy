@@ -1,10 +1,10 @@
-(define-module (gritty simulate)
+(define-module (griddy simulate)
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
-  #:use-module (gritty core)
-  #:use-module (gritty util)
+  #:use-module (griddy core)
+  #:use-module (griddy util)
   ;; TODO: Better API. <simulation> class? closure-based iterator?
   #:export (get-first
             get-next))

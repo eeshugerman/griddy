@@ -1,4 +1,4 @@
-(define-module (gritty util)
+(define-module (griddy util)
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
