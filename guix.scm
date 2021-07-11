@@ -1,9 +1,10 @@
-;; guix environment --load=.guix.scm
+;; guix environment --load=guix.scm
 (use-modules (guix gexp)
              (guix packages)
              (guix build-system guile)
              (gnu packages guile)
-             (gnu packages guile-xyz))
+             (gnu packages guile-xyz)
+             (gnu packages game-development))
 (package
  (name "griddy")
  (version "0.0.1")
@@ -17,4 +18,5 @@
            ("pfds" ,guile-pfds)
            ("picture-language" ,guile-picture-language)
            ;; needed for picture-language to work?
-           ("readline" ,guile-readline))))
+           ("readline" ,guile-readline)
+           ("chickadee" ,guile-chickadee))))

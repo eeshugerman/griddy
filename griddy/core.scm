@@ -61,6 +61,7 @@
   (direction  ;; 'forward or 'backward, relevant to segment
    #:init-keyword #:direction)
   (actors
+   ;; or maybe just use a list and lean on (chickadee math grid)
    #:init-form (make-bbtree
                 (lambda (actor-1 actor-2)
                   (> (get actor-1 'location 'pos-param)
