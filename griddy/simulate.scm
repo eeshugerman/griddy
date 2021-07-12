@@ -78,5 +78,5 @@
   (match (get actor 'route)
     (()
      (do/=nil=))
-    (((arrive-at target-pos-param) rest ...)
+    ((('arrive-at target-pos-param) rest ...)
      (do/arrive-at target-pos-param))))
