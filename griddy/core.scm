@@ -4,6 +4,7 @@
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (pfds bbtrees)
+  #:use-module (chickadee math vector)
   #:use-module (griddy util)
   #:use-module (griddy math)
   #:export (<actor>
@@ -29,15 +30,31 @@
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
 
+(define <vec2> (class-of (vec2 0 0)))
+
 (define-class <road-junction> (<static>)
+  pos ;; vec2
   (pos-x
-   #:init-keyword #:x
-   #:getter get-pos-x)
+   #:getter get-pos-x
+   #:allocation #:virtual
+   #:slot-ref (lambda (self)
+                (vec2-x (slot-ref self 'pos)))
+   #:slot-set! (lambda (self val)
+                 (set-vec2-x! (slot-ref self 'pos) val)))
   (pos-y
-   #:init-keyword #:y
-   #:getter get-pos-y)
+   #:getter get-pos-y
+   #:allocation #:virtual
+   #:slot-ref (lambda (self)
+                (vec2-y (slot-ref self 'pos)))
+   #:slot-set! (lambda (self val)
+                 (set-vec2-y! (slot-ref self 'pos) val)))
   (segments
    #:init-thunk list))
+
+(define-method (initialize (self <road-junction>) initargs)
+  (slot-set! self 'pos (vec2 (get-keyword #:x initargs)
+                             (get-keyword #:y initargs)))
+  (next-method))
 
 (define-method (get-road-lanes (junction <road-junction>))
   (fold (lambda (acc segment)
@@ -74,10 +91,8 @@
    #:init-thunk list))
 
 (define-method (length-of (segment <road-segment>))
-  (l2 (get segment 'start-junction 'pos-x)
-      (get segment 'start-junction 'pos-y)
-      (get segment 'stop-junction 'pos-x)
-      (get segment 'stop-junction 'pos-y)))
+  (l2 (get segment 'start-junction 'pos)
+      (get segment 'stop-junction 'pos)))
 
 (define-class <location> ()
   (road-lane
