@@ -53,22 +53,26 @@
   world)
 
 (define (add-actors! world)
-  (let* ((lane-1 (first (get-road-lanes world))) ;; forward
+  (let* (
+         (lane-1 (first (get-road-lanes world))) ;; forward
          (actor-1 (make <actor>))
          (location-1 (make <location> #:road-lane lane-1 #:pos-param 0.25))
 
          (lane-2 (second (get-road-lanes world))) ;; backward
          (actor-2 (make <actor>))
-         (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75)))
+         (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75))
+         )
 
-    (link! actor-1 location-1)
-    (set-route actor-1 '((arrive-at 0.75)))
+    ;; (link! actor-1 location-1)
+    ;; (set-route actor-1 '((arrive-at 0.75)))
 
     (link! actor-2 location-2)
-    (set-route actor-2 '((arrive-at 0.25)))
+    (set-route actor-2 '(
+                         ;; (turn-onto lane-3)
+                         (arrive-at 0.5)))
     ))
 
 (define world (get-first make-skeleton add-actors!))
 (pict->file (draw world) "foo-1.svg")
-(set! world (get-next make-skeleton world))
+(set! world (iterate make-skeleton world))
 (pict->file (draw world) "foo-2.svg")

@@ -7,76 +7,95 @@
   #:use-module (griddy util)
   ;; TODO: Better API. <simulation> class? closure-based iterator?
   #:export (get-first
-            get-next))
+            iterate))
 
 (define *simulate/fps* 5)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
 
-(define (make-next-static-getter current-world next-world)
+(define (make-get-static++ world world++)
   (define lookup-table
     (alist->hash-table
-     (zip-to-alist (get current-world 'static-items)
-                   (get next-world 'static-items))
+     (zip-to-alist (get world 'static-items)
+                   (get world++ 'static-items))
      eq?))
-  (lambda (current-world-item)
-    (hash-table-ref lookup-table current-world-item)))
+  (lambda (world-item)
+    (hash-table-ref lookup-table world-item)))
 
 (define-method (get-first (make-skeleton <procedure>) (add-actors! <procedure>))
   (define world (make-skeleton))
   (add-actors! world)
   world)
 
-(define-method (get-next (make-skeleton <procedure>) (current-world <world>))
-  (let* ((next-world (make-skeleton))
-         (get-next-static (make-next-static-getter current-world next-world)))
+(define-method (iterate (make-skeleton <procedure>) (world <world>))
+  (let* ((world++ (make-skeleton))
+         (get-static++ (make-get-static++ world world++)))
     (for-each
-     ;; mutate `next-world' via `get-next-static', inserting
-     ;; a new/next `actor'
-     (cut advance! <> get-next-static)
-     (get-actors current-world))
-    next-world))
+     ;; mutate `world++' via `get-static++', inserting
+     ;; a new/++ `actor'
+     (cut advance! <> get-static++)
+     (get-actors world))
+    world++))
 
-(define-method (advance! (actor <actor>) (get-next-static <procedure>))
+(define-method (advance! (actor <actor>) (get-static++ <procedure>))
+
+  (define (get-pos-param-delta lane)
+    (* *simulate/time-step*
+       (/ (get actor 'max-speed)
+          (length-of (get lane 'segment)))))
 
   (define (do/=nil=)
     (let* ((lane-current (get actor 'location 'road-lane))
-           (lane-next (get-next-static lane-current))
-           (actor-next (copy actor))
-           (location-next (make <location>
-                            #:road-lane lane-next
+           (lane++ (get-static++ lane-current))
+           (actor++ (copy actor))
+           (location++ (make <location>
+                            #:road-lane lane++
                             #:pos-param (get actor 'location 'pos-param))))
-      (link! actor-next location-next)))
+      (link! actor++ location++)))
 
   (define (do/arrive-at pos-param-target)
     (let* ((lane-current (get actor 'location 'road-lane))
-           (lane-next (get-next-static lane-current))
+           (lane++ (get-static++ lane-current))
            (pos-param-current (get actor 'location 'pos-param))
-           (pos-param-delta (* *simulate/time-step*
-                               (/ (get actor 'max-speed)
-                                  (length-of (get lane-current 'segment)))))
+           (pos-param-delta (get-pos-param-delta lane-current))
            (pos-param-to-go (- pos-param-target pos-param-current)))
       (if (>= (abs pos-param-delta) (abs pos-param-to-go))
           ;; arrived
-          (let ((actor-next (copy actor))
-                (location-next (make <location>
-                                 #:road-lane lane-next
+          (let ((actor++ (copy actor))
+                (location++ (make <location>
+                                 #:road-lane lane++
                                  #:pos-param pos-param-target)))
-            (slot-set! actor-next 'route '())
-            (link! actor-next location-next))
+            (slot-set! actor++ 'route '())
+            (link! actor++ location++)
+            (slot-set actor 'route (cdr (slot-ref actor 'route))))
           ;; still travelling
-          (let* ((actor-next (copy actor))
-                 (pos-param-next ((case (get lane-current 'direction)
+          (let* ((actor++ (copy actor))
+                 (pos-param++ ((case (get lane-current 'direction)
                                     ((forward) +)
                                     ((backward) -))
                                   pos-param-current
                                   pos-param-delta))
-                 (location-next (make <location>
-                                  #:road-lane lane-next
-                                  #:pos-param pos-param-next)))
-            (link! actor-next location-next)))))
+                 (location++ (make <location>
+                                  #:road-lane lane++
+                                  #:pos-param pos-param++)))
+            (link! actor++ location++)))))
+
+  ;; (define (do/turn-onto road-lane)
+
+  ;;   (let* ((lane-current (get actor 'location 'road-lane))
+  ;;          (pos-param-current (get actor 'location 'pos-param))
+  ;;          (pos-param-delta (get-pos-param-delta lane-current))
+  ;;          (pos-param-to-go (case (get lane-current 'direction)
+  ;;                             ((forward) (- 1 pos-param-current))
+  ;;                             ((backward) pos-param-current)))
+  ;;          (if (>= (abs pos-param-delta) (abs pos-param-to-go))
+  ;;              ;; time to turn
+  ;;              ))))
 
   (match (get actor 'route)
     (()
      (do/=nil=))
-    ((('arrive-at target-pos-param) rest ...)
-     (do/arrive-at target-pos-param))))
+    ((('arrive-at pos-param) rest ...)
+     (do/arrive-at pos-param))
+    ;; ((('turn-onto road-lane) rest ...)
+    ;;  (do/turn-onto road-lane))
+    ))
