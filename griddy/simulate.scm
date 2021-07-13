@@ -79,17 +79,26 @@
                                   #:pos-param pos-param++)))
             (link! actor++ location++)))))
 
-  ;; (define (do/turn-onto road-lane)
-
-  ;;   (let* ((lane-current (get actor 'location 'road-lane))
-  ;;          (pos-param-current (get actor 'location 'pos-param))
-  ;;          (pos-param-delta (get-pos-param-delta lane-current))
-  ;;          (pos-param-to-go (case (get lane-current 'direction)
-  ;;                             ((forward) (- 1 pos-param-current))
-  ;;                             ((backward) pos-param-current)))
-  ;;          (if (>= (abs pos-param-delta) (abs pos-param-to-go))
-  ;;              ;; time to turn
-  ;;              ))))
+  (define (do/turn-onto road-lane)
+    (let* ((lane-current (get actor 'location 'road-lane))
+           (direction (get lane-current 'direction))
+           (pos-param-current (get actor 'location 'pos-param))
+           (pos-param-delta (get-pos-param-delta lane-current))
+           (pos-param-to-go (match direction
+                              ('forward (- 1 pos-param-current))
+                              ('backward pos-param-current)))
+           (if (>= (abs pos-param-delta) (abs pos-param-to-go))
+               ;; time to turn
+               (let* ((outgoing-lanes
+                       (get-sinks (get lane-current
+                                       'segment
+                                       (match direction
+                                         ('forward 'stop-junction)
+                                         ('backward 'start-junction))))))
+                 ;; assert road-lane ∈ outgoing-lanes
+                 ;; ... or just assume it's right
+                 )
+               ))))
 
   (match (get actor 'route)
     (()
