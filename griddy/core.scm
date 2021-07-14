@@ -75,7 +75,7 @@
 
 (define-class <road-lane> (<static>)
   segment
-  (direction  ;; 'forward or 'backward, relevant to segment
+  (direction  ;; 'forward or 'backward, relative to segment
    #:init-keyword #:direction)
   (actors
    ;; or maybe just use a list and lean on (chickadee math grid)

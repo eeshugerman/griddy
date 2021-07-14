@@ -36,8 +36,11 @@
      (get-actors world))
     world++))
 
-(define-method (advance! (actor <actor>) (get-static++ <procedure>))
 
+(define (pop-route! actor)
+  (slot-set! actor 'route (cdr (slot-ref actor 'route))))
+
+(define-method (advance! (actor <actor>) (get-static++ <procedure>))
   (define (get-pos-param-delta lane)
     (* *simulate/time-step*
        (/ (get actor 'max-speed)
@@ -52,53 +55,64 @@
                             #:pos-param (get actor 'location 'pos-param))))
       (link! actor++ location++)))
 
+  ;; TODO: lots of duplication between arrive-at and turn-onto
   (define (do/arrive-at pos-param-target)
-    (let* ((lane-current (get actor 'location 'road-lane))
+    (let* ((actor++ (copy actor))
+           (lane-current (get actor 'location 'road-lane))
            (lane++ (get-static++ lane-current))
            (pos-param-current (get actor 'location 'pos-param))
            (pos-param-delta (get-pos-param-delta lane-current))
            (pos-param-to-go (- pos-param-target pos-param-current)))
       (if (>= (abs pos-param-delta) (abs pos-param-to-go))
           ;; arrived
-          (let ((actor++ (copy actor))
-                (location++ (make <location>
-                                 #:road-lane lane++
-                                 #:pos-param pos-param-target)))
-            (slot-set! actor++ 'route '())
-            (link! actor++ location++)
-            (slot-set actor 'route (cdr (slot-ref actor 'route))))
-          ;; still travelling
-          (let* ((actor++ (copy actor))
-                 (pos-param++ ((case (get lane-current 'direction)
-                                    ((forward) +)
-                                    ((backward) -))
-                                  pos-param-current
-                                  pos-param-delta))
+          (let ((location++ (make <location>
+                              #:road-lane lane++
+                              #:pos-param pos-param-target)))
+            (pop-route! actor++)
+            (link! actor++ location++))
+          ;; continue on segment
+          (let* ((pos-param++ ((match (get lane-current 'direction)
+                                 ('forward +)
+                                 ('backward -))
+                               pos-param-current
+                               pos-param-delta))
                  (location++ (make <location>
                                   #:road-lane lane++
                                   #:pos-param pos-param++)))
             (link! actor++ location++)))))
 
-  (define (do/turn-onto road-lane)
+  (define (do/turn-onto lane-next)
     (let* ((lane-current (get actor 'location 'road-lane))
-           (direction (get lane-current 'direction))
+           (direction-current (get lane-current 'direction))
+           (actor++ (copy actor))
            (pos-param-current (get actor 'location 'pos-param))
            (pos-param-delta (get-pos-param-delta lane-current))
-           (pos-param-to-go (match direction
-                              ('forward (- 1 pos-param-current))
-                              ('backward pos-param-current)))
-           (if (>= (abs pos-param-delta) (abs pos-param-to-go))
+           (pos-param-to-junction (match direction
+                                    ('forward (- 1 pos-param-current))
+                                    ('backward pos-param-current)))
+           (if (>= (abs pos-param-delta) (abs pos-param-to-junction))
                ;; time to turn
-               (let* ((outgoing-lanes
-                       (get-sinks (get lane-current
-                                       'segment
-                                       (match direction
-                                         ('forward 'stop-junction)
-                                         ('backward 'start-junction))))))
-                 ;; assert road-lane ∈ outgoing-lanes
-                 ;; ... or just assume it's right
-                 )
-               ))))
+               (let ((direction-next (get lane-next 'direction))
+                     (pos-param-remaining (- pos-param-delta pos-param-to-junction))
+                     (pos-param++ (match direction-next
+                                       ('forward pos-param-remaining)
+                                       ('backward (- 1 pos-param-remaining))))
+                     (lane-next++ (get-static++ lane-next))
+                     (location++ (make <location>
+                                   #:road-lane lane-next++
+                                   #:pos-param pos-param++)))
+                 (pop-route! actor++)
+                 (link! actor++ location++))
+               ;; continue on segment
+               (let* ((pos-param++ ((match (get lane-current 'direction)
+                                      ('forward +)
+                                      ('backward -))
+                                    pos-param-current
+                                    pos-param-delta))
+                      (location++ (make <location>
+                                    #:road-lane lane++
+                                    #:pos-param pos-param++)))
+                 (link! actor++ location++))))))
 
   (match (get actor 'route)
     (()
