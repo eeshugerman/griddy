@@ -63,9 +63,9 @@
 
 (define (is-sink? lane junction)
   (or (and (eq? (get lane 'segment 'start-junction) junction)
-           (eq? (get lane 'direction) 'forward))
+           (eq? (get lane 'direction) 'forw))
       (and (eq? (get lane 'segment 'stop-junction) junction)
-           (eq? (get lane 'direction) 'backward))))
+           (eq? (get lane 'direction) 'back))))
 
 (define-method (get-sinks (junction <road-junction>))
   (filter is-sink? (get-road-lanes junction)))
@@ -75,7 +75,7 @@
 
 (define-class <road-lane> (<static>)
   segment
-  (direction  ;; 'forward or 'backward, relative to segment
+  (direction  ;; 'forw or 'back, relative to segment
    #:init-keyword #:direction)
   (actors
    ;; or maybe just use a list and lean on (chickadee math grid)

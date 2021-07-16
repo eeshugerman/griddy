@@ -51,8 +51,8 @@
                                  (/ (get actor 'max-speed)
                                     (length-of (get lane-current 'segment)))
                                  (match direction-current
-                                   ('forward +1)
-                                   ('backward -1))))
+                                   ('forw +1)
+                                   ('back -1))))
          (actor++ (copy actor get-static++)))
 
     (define (do/=nil=)
@@ -80,15 +80,15 @@
               (get lane-next 'direction))
              (pos-param-next
               (match (list direction-current direction-next)
-                (('forward 'forward)    (- pos-param-dumb-next 1))
-                (('forward 'backward)   (- 1 (- pos-param-dumb-next 1)))
-                (('backward 'forward)   (- pos-param-dumb-next))
-                (('backward 'backward)  (- 1 (- pos-param-dumb-next)))))
+                (('forw 'forw) (- pos-param-dumb-next 1))
+                (('forw 'back) (- 1 (- pos-param-dumb-next 1)))
+                (('back 'forw) (- pos-param-dumb-next))
+                (('back 'back) (- 1 (- pos-param-dumb-next)))))
              (done?
               (match (list direction-current pos-param-dumb-next)
-                (('forward (? gte-1))   #t)
-                (('backward (? lte-0))  #t)
-                (_                      #f)))
+                (('forw (? gte-1))  #t)
+                (('back (? lte-0))  #t)
+                (_ #f)))
              (location++ (make <location>
                            #:road-lane (get-static++ lane-next)
                            #:pos-param pos-param-next)))

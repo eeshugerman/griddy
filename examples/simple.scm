@@ -30,9 +30,9 @@
          (segment-1 (make <road-segment>))
          (segment-2 (make <road-segment>))
 
-         (lane-1 (make <road-lane> #:direction 'forward))
-         (lane-2 (make <road-lane> #:direction 'backward))
-         (lane-3 (make <road-lane> #:direction 'forward)))
+         (lane-1 (make <road-lane> #:direction 'forw))
+         (lane-2 (make <road-lane> #:direction 'back))
+         (lane-3 (make <road-lane> #:direction 'forw)))
 
     (link! junction-1 segment-1 junction-2)
     (link! junction-1 segment-2 junction-3)
@@ -54,11 +54,11 @@
 
 (define (add-actors! world)
   (let* (
-         (lane-1 (first (get-road-lanes world))) ;; forward
+         (lane-1 (first (get-road-lanes world))) ;; forw
          (actor-1 (make <actor>))
          (location-1 (make <location> #:road-lane lane-1 #:pos-param 0.25))
 
-         (lane-2 (second (get-road-lanes world))) ;; backward
+         (lane-2 (second (get-road-lanes world))) ;; back
          (actor-2 (make <actor>))
          (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75))
          )
