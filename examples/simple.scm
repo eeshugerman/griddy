@@ -67,10 +67,9 @@
     ;; (set-route actor-1 '((arrive-at 0.75)))
 
     (link! actor-2 location-2)
-    (set-route actor-2 '(
-                         ;; (turn-onto lane-3)
-                         (arrive-at 0.5)))
-    ))
+    (set-route actor-2 (make <route>
+                         #:steps `((turn-onto ,lane-3)
+                                   (arrive-at 0.5))))))
 
 (define world (get-first make-skeleton add-actors!))
 (pict->file (draw world) "foo-1.svg")

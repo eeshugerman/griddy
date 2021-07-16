@@ -113,13 +113,18 @@
          (y2 (get road-segment 'stop-junction 'pos-y)))
     (+ y1 (* (get loc 'pos-param) (- y2 y1)))))
 
+(define-class <route> ()
+  (steps
+   #:init-thunk list
+   #:init-keyword #:steps))
+
 (define-class <actor> ()
   location
   (max-speed
    #:init-keyword #:max-speed
    #:init-value 25) ;; units / second
   (route
-   #:init-thunk list
+   #:init-form (make <route>)
    #:setter set-route))
 
 (define-method (get-pos-x (actor <actor>))
@@ -194,11 +199,23 @@
       (throw 'road-segment-has-no-lanes))
   (next-method))
 
-(define-method (copy (actor <actor>))
-  (define (copy-slot-if-bound! actor new-actor slot)
-    (if (slot-bound? actor slot)
-        (slot-set! new-actor slot (slot-ref actor slot))))
+(define-method (copy obj _)
+  obj)
+
+(define-method (copy (route <route>) get-static++)
+  (define (copy-atom atom)
+    (if (is-a? atom <static>) (get-static++ atom) atom))
+  (define (copy-step step)
+    (map copy-atom step))
+  (map copy-step (get route 'steps)))
+
+(define-method (copy (actor <actor>) get-static++)
   (define new-actor (make <actor>))
-  (copy-slot-if-bound! actor new-actor 'max-speed)
-  (copy-slot-if-bound! actor new-actor 'route)
+  (define (copy-slot-if-bound! slot)
+    (if (slot-bound? actor slot)
+        (slot-set! new-actor
+                   slot
+                   (copy (slot-ref actor slot) get-static++))))
+  (copy-slot-if-bound! 'max-speed)
+  (copy-slot-if-bound! 'route)
   new-actor)
