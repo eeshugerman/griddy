@@ -12,14 +12,39 @@
 (define *simulate/fps* 5)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
 
-(define (make-get-static++ world world++)
-  (define lookup-table
+(define (make-++ world world++)
+  (define static-items-table
     (alist->hash-table
      (zip-to-alist (get world 'static-items)
                    (get world++ 'static-items))
      eq?))
-  (lambda (world-item)
-    (hash-table-ref lookup-table world-item)))
+
+  (define-generic ++)
+
+  (define-method (++ obj)
+    obj)
+
+  (define-method (++ (item <static>))
+    (hash-table-ref static-items-table item))
+
+  (define-method (++ (route <route>))
+    (define (copy-step step)
+      (map ++ step))
+    (make <route>
+      #:steps (map copy-step (get route 'steps))))
+
+  (define-method (++ (actor <actor>))
+    (define new-actor (make <actor>))
+    (define (copy-slot-if-bound! slot)
+      (if (slot-bound? actor slot)
+          (slot-set! new-actor
+                     slot
+                     (++ (slot-ref actor slot)))))
+    (copy-slot-if-bound! 'max-speed)
+    (copy-slot-if-bound! 'route)
+    new-actor)
+
+  ++)
 
 (define-method (get-first (make-skeleton <procedure>) (add-actors! <procedure>))
   (define world (make-skeleton))
@@ -28,16 +53,16 @@
 
 (define-method (iterate (make-skeleton <procedure>) (world <world>))
   (let* ((world++ (make-skeleton))
-         (get-static++ (make-get-static++ world world++)))
+         (++ (make-++ world world++)))
     (for-each
-     ;; mutate `world++' via `get-static++', inserting
-     ;; a new/++ `actor'
-     (cut advance! <> get-static++)
+     ;; mutate `world++' via `++', inserting
+     ;; a new `actor++'
+     (cut advance! <> ++)
      (get-actors world))
     world++))
 
 
-(define-method (advance! (actor <actor>) (get-static++ <procedure>))
+(define-method (advance! (actor <actor>) (++ <generic>))
   (let* ((lane-current (get actor 'location 'road-lane))
          (direction-current (get lane-current 'direction))
          (pos-param-current (get actor 'location 'pos-param))
@@ -47,12 +72,12 @@
                                  (match direction-current
                                    ('forw +1)
                                    ('back -1))))
-         (actor++ (copy actor get-static++)))
+         (actor++ (++ actor)))
 
     (define (do/=nil=)
-           (link! actor++ (make <location>
-                            #:road-lane (get-static++ lane-current)
-                            #:pos-param (get actor 'location 'pos-param))))
+      (link! actor++ (make <location>
+                       #:road-lane (++ lane-current)
+                       #:pos-param (get actor 'location 'pos-param))))
 
     (define (do/arrive-at pos-param-target)
       (let* ((done?
@@ -64,7 +89,7 @@
                   (+ pos-param-current pos-param-max-delta))))
         (if done? (pop-step! (get actor++ 'route)))
         (link! actor++ (make <location>
-                         #:road-lane (get-static++ lane-current)
+                         #:road-lane (++ lane-current)
                          #:pos-param pos-param-next))))
 
     (define (do/turn-onto lane-next)
@@ -87,7 +112,7 @@
                 ((#t 'back 'forw) (- pos-param-next-naive))
                 ((#t 'back 'back) (- 1 (- pos-param-next-naive)))))
              (lane++
-              (get-static++ (if done? lane-next lane-current))))
+              (++ (if done? lane-next lane-current))))
         (link! actor++ (make <location>
                          #:road-lane lane++
                          #:pos-param pos-param-next))

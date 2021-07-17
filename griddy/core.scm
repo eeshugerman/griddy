@@ -14,9 +14,9 @@
             <road-lane>
             <road-segment>
             <route>
+            <static>
             <world>
             add!
-            copy
             get-actors
             get-pos-x
             get-pos-y
@@ -212,24 +212,3 @@
       (throw 'road-segment-has-no-lanes))
   (next-method))
 
-(define-method (copy obj _)
-  obj)
-
-(define-method (copy (route <route>) get-static++)
-  (define (copy-atom atom)
-    (if (is-a? atom <static>) (get-static++ atom) atom))
-  (define (copy-step step)
-    (map copy-atom step))
-  (make <route>
-    #:steps (map copy-step (get route 'steps))))
-
-(define-method (copy (actor <actor>) get-static++)
-  (define new-actor (make <actor>))
-  (define (copy-slot-if-bound! slot)
-    (if (slot-bound? actor slot)
-        (slot-set! new-actor
-                   slot
-                   (copy (slot-ref actor slot) get-static++))))
-  (copy-slot-if-bound! 'max-speed)
-  (copy-slot-if-bound! 'route)
-  new-actor)
