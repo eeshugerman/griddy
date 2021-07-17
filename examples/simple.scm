@@ -6,7 +6,6 @@
              (pict)
              (griddy core)
              (griddy util)
-             (griddy draw)
              (griddy simulate))
 
 (for-each (compose reload-module resolve-module)
@@ -76,7 +75,9 @@
                                    (arrive-at 0.5))))
     ))
 
-(define world (get-first make-skeleton add-actors!))
+(simulate make-skeleton add-actors!)
+
+;; (define world (get-first make-skeleton add-actors!))
 ;; (pict->file (draw world) "foo-1.svg")
 ;; (set! world (iterate make-skeleton world))
 ;; (pict->file (draw world) "foo-2.svg")

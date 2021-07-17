@@ -3,11 +3,11 @@
   #:use-module (srfi srfi-69)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
+  #:use-module (chickadee)
   #:use-module (griddy core)
   #:use-module (griddy util)
-  ;; TODO: Better API. <simulation> class? closure-based iterator?
-  #:export (get-first
-            iterate))
+  #:use-module (griddy draw-chickadee)
+  #:export (simulate))
 
 (define *simulate/fps* 5)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
@@ -46,22 +46,6 @@
 
   ++)
 
-(define-method (get-first (make-skeleton <procedure>) (add-actors! <procedure>))
-  (define world (make-skeleton))
-  (add-actors! world)
-  world)
-
-(define-method (iterate (make-skeleton <procedure>) (world <world>))
-  (let* ((world++ (make-skeleton))
-         (++ (make-++ world world++)))
-    (for-each
-     ;; mutate `world++' via `++', inserting
-     ;; a new `actor++'
-     (cut advance! <> ++)
-     (get-actors world))
-    world++))
-
-
 (define (get-pos-param-delta-max actor)
   (* (match (get actor 'location 'road-lane 'direction)
        ('forw +1)
@@ -72,10 +56,9 @@
 
 (define (route-step/=nil= actor ++)
   (lambda ()
-    (link! (++ actor)
-           (make <location>
-             #:road-lane (++ (get actor 'location 'road-lane))
-             #:pos-param (get actor 'location 'pos-param)))))
+    (link! (++ actor) (make <location>
+                        #:road-lane (++ (get actor 'location 'road-lane))
+                        #:pos-param (get actor 'location 'pos-param)))))
 
 (define (route-step/arrive-at actor ++)
   (lambda (pos-param-target)
@@ -134,3 +117,26 @@
      ((route-step/arrive-at actor ++) pos-param))
     (('turn-onto road-lane)
      ((route-step/turn-onto actor ++) road-lane))))
+
+(define world #f)
+
+(define (simulate make-skeleton add-actors!)
+  (define (load)
+    (set! world (make-skeleton))
+    (add-actors! world))
+
+  (define (update delta-t)
+    (let* ((world++ (make-skeleton))
+           (++ (make-++ world world++)))
+      (for-each
+       ;; mutate `world++' via `++', inserting a new `actor++'
+       (cut advance! <> ++)
+       (get-actors world))
+      (set! world world++)))
+
+  (run-game
+   #:load load
+   #:update update
+   #:draw (lambda (alpha) (draw))
+   #:window-width 600
+   #:window-height 600))
