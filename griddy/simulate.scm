@@ -37,12 +37,6 @@
     world++))
 
 
-(define (pop-route! actor)
-  (slot-set! actor 'route (cdr (slot-ref actor 'route))))
-
-(define gte-1 (cut (>= <> 1)))
-(define lte-0 (cut (<= <> 0)))
-
 (define-method (advance! (actor <actor>) (get-static++ <procedure>))
   (let* ((lane-current (get actor 'location 'road-lane))
          (direction-current (get lane-current 'direction))
@@ -57,7 +51,7 @@
 
     (define (do/=nil=)
            (link! actor++ (make <location>
-                            #:road-lane lane++
+                            #:road-lane (get-static++ lane-current)
                             #:pos-param (get actor 'location 'pos-param))))
 
     (define (do/arrive-at pos-param-target)
@@ -68,38 +62,42 @@
               (if done?
                   pos-param-target
                   (+ pos-param-current pos-param-max-delta))))
-        (if done? pop-route! actor++)
+        (if done? (pop-step! (get actor++ 'route)))
         (link! actor++ (make <location>
                          #:road-lane (get-static++ lane-current)
                          #:pos-param pos-param-next))))
 
     (define (do/turn-onto lane-next)
-      (let* ((pos-param-dumb-next
+      (let* ((pos-param-next-naive
+              ;; TODO: this assumes (= (length-of lane-current)
+              ;;                       (length-of lane-next))
               (+ pos-param-current pos-param-max-delta))
              (direction-next
               (get lane-next 'direction))
-             (pos-param-next
-              (match (list direction-current direction-next)
-                (('forw 'forw) (- pos-param-dumb-next 1))
-                (('forw 'back) (- 1 (- pos-param-dumb-next 1)))
-                (('back 'forw) (- pos-param-dumb-next))
-                (('back 'back) (- 1 (- pos-param-dumb-next)))))
              (done?
-              (match (list direction-current pos-param-dumb-next)
-                (('forw (? gte-1))  #t)
-                (('back (? lte-0))  #t)
+              (match (list direction-current pos-param-next-naive)
+                (('forw (? (cut >= <> 1))) #t)
+                (('back (? (cut <= <> 0))) #t)
                 (_ #f)))
-             (location++ (make <location>
-                           #:road-lane (get-static++ lane-next)
-                           #:pos-param pos-param-next)))
-        (link! actor++ location++)
-        (if done? (pop-route! actor++))))
+             (pos-param-next
+              (match (list done? direction-current direction-next)
+                ((#f _ _) pos-param-next-naive)
+                ((#t 'forw 'forw) (- pos-param-next-naive 1))
+                ((#t 'forw 'back) (- 1 (- pos-param-next-naive 1)))
+                ((#t 'back 'forw) (- pos-param-next-naive))
+                ((#t 'back 'back) (- 1 (- pos-param-next-naive)))))
+             (lane++
+              (get-static++ (if done? lane-next lane-current))))
+        (link! actor++ (make <location>
+                         #:road-lane lane++
+                         #:pos-param pos-param-next))
+        (if done? (pop-step! (get actor++ 'route)))))
 
-    (match (get actor 'route)
+    (match (next-step (get actor 'route))
       (()
        (do/=nil=))
-      ((('arrive-at pos-param) rest ...)
+      (('arrive-at pos-param)
        (do/arrive-at pos-param))
-      ((('turn-onto road-lane) rest ...)
+      (('turn-onto road-lane)
        (do/turn-onto road-lane))
       )))

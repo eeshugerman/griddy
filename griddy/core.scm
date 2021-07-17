@@ -13,6 +13,7 @@
             <road-junction>
             <road-lane>
             <road-segment>
+            <route>
             <world>
             add!
             copy
@@ -24,6 +25,8 @@
             get-road-segments
             length-of
             link!
+            next-step
+            pop-step!
             segment
             set-route))
 
@@ -80,9 +83,11 @@
   (actors
    ;; or maybe just use a list and lean on (chickadee math grid)
    #:init-form (make-bbtree
-                (lambda (actor-1 actor-2)
-                  (> (get actor-1 'location 'pos-param)
-                     (get actor-2 'location 'pos-param))))))
+                >
+                ;; (lambda (actor-1 actor-2)
+                ;;   (> (get actor-1 'location 'pos-param)
+                ;;      (get actor-2 'location 'pos-param)))
+                )))
 
 (define-class <road-segment> (<static>)
   start-junction
@@ -117,6 +122,14 @@
   (steps
    #:init-thunk list
    #:init-keyword #:steps))
+
+(define-method (pop-step! (route <route>))
+  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
+
+(define-method (next-step (route <route>))
+  (if (null? (get route 'steps))
+      '()
+      (car (get route 'steps))))
 
 (define-class <actor> ()
   location
@@ -163,7 +176,7 @@
 ;; -----------------------------------------------------------------------------
 (define-method (link! (lane <road-lane>) (segment <road-segment>))
   (if (slot-bound? lane 'segment)
-      (throw 'lane-already-linked))
+      (throw 'lane-already-linked lane segment))
   (slot-set! lane 'segment segment)
   (slot-add! segment 'lanes lane))
 
@@ -207,7 +220,8 @@
     (if (is-a? atom <static>) (get-static++ atom) atom))
   (define (copy-step step)
     (map copy-atom step))
-  (map copy-step (get route 'steps)))
+  (make <route>
+    #:steps (map copy-step (get route 'steps))))
 
 (define-method (copy (actor <actor>) get-static++)
   (define new-actor (make <actor>))
