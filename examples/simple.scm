@@ -62,18 +62,13 @@
          (actor-2 (make <actor>))
          (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75)))
 
-    ;; (link! actor-1 location-1)
-    ;; (set-route actor-1 (make <route> #:steps '((arrive-at 0.75))))
-
-    ;; (link! actor-1 location-2)
-    ;; (set-route actor-1 (make <route>
-    ;;                      #:steps `((arrive-at 0.5))))
+    (link! actor-1 location-1)
+    (set-route actor-1 (make <route> #:steps '((arrive-at 0.75))))
 
     (link! actor-2 location-2)
     (set-route actor-2 (make <route>
                          #:steps `((turn-onto ,lane-1)
-                                   (arrive-at 0.5))))
-    ))
+                                   (arrive-at 0.5))))))
 
 (simulate make-skeleton add-actors!)
 

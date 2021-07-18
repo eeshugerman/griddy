@@ -112,7 +112,7 @@
 (define-method (advance! (actor <actor>) (++ <generic>))
   (match (next-step (get actor 'route))
     (()
-     ((route-step/=nil=)))
+     ((route-step/=nil= actor ++)))
     (('arrive-at pos-param)
      ((route-step/arrive-at actor ++) pos-param))
     (('turn-onto road-lane)
@@ -137,6 +137,6 @@
   (run-game
    #:load load
    #:update update
-   #:draw (lambda (alpha) (draw))
+   #:draw (lambda (alpha) (draw-world world))
    #:window-width 600
    #:window-height 600))
