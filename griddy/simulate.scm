@@ -9,7 +9,7 @@
   #:use-module (griddy draw-chickadee)
   #:export (simulate))
 
-(define *simulate/fps* 5)
+(define *simulate/fps* 25)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
 
 (define (make-++ world world++)
@@ -138,5 +138,5 @@
    #:load load
    #:update update
    #:draw (lambda (alpha) (draw-world world))
-   #:window-width 600
-   #:window-height 600))
+   #:window-width 500
+   #:window-height 500))

@@ -17,13 +17,8 @@
 (define (make-skeleton)
   (define world (make <world>))
 
-  (let ((junction-1 (make <road-junction> #:x 0 #:y 500))
-        (junction-2 (make <road-junction> #:x 500 #:y 0)))
-    (add! world junction-1)
-    (add! world junction-2))
-
   (let* ((junction-1 (make <road-junction> #:x 250 #:y 250)) ;; center
-         (junction-2 (make <road-junction> #:x 250 #:y 400)) ;; mid lower
+         (junction-2 (make <road-junction> #:x 150 #:y 400)) ;; mid upper
          (junction-3 (make <road-junction> #:x 400 #:y 250)) ;; mid right
 
          (segment-1 (make <road-segment>)) ;; vertical
@@ -57,7 +52,7 @@
          (lane-3 (first (get-road-lanes world)))
 
          (actor-1 (make <actor>))
-         (location-1 (make <location> #:road-lane lane-1 #:pos-param 0.25))
+         (location-1 (make <location> #:road-lane lane-3 #:pos-param 0.25))
 
          (actor-2 (make <actor>))
          (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75)))
