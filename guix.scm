@@ -16,7 +16,4 @@
  (home-page "")
  (inputs `(("guile" ,guile-3.0)
            ("pfds" ,guile-pfds)
-           ("picture-language" ,guile-picture-language)
-           ;; needed for picture-language to work?
-           ("readline" ,guile-readline)
            ("chickadee" ,guile-chickadee))))

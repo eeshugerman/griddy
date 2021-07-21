@@ -6,7 +6,7 @@
   #:use-module (chickadee)
   #:use-module (griddy core)
   #:use-module (griddy util)
-  #:use-module (griddy draw-chickadee)
+  #:use-module (griddy draw)
   #:export (simulate))
 
 (define *simulate/fps* 25)
