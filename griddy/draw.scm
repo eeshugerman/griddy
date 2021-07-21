@@ -1,6 +1,7 @@
 (define-module (griddy draw)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-26)
   #:use-module (oop goops)
   #:use-module (chickadee math)
   #:use-module (chickadee math vector)
@@ -17,18 +18,34 @@
 (define *draw/road-junction/color* tango-aluminium-6)
 (define *draw/road-segment/width* 40)
 (define *draw/road-segment/color* tango-aluminium-5)
+(define *draw/road-lane/arrow-size* 5)
+(define *draw/road-lane/color* tango-plum)
 (define *draw/actor/size* 10)
-(define *draw/actor/color* "yellow")
+(define *draw/actor/color* tango-sky-blue)
 
 (define with-canvas (compose draw-canvas make-canvas))
 
 (define (draw-road-junction junction)
-  (with-canvas (with-style ((fill-color *draw/road-junction/color*))
-                 (fill (circle (get junction 'pos)
-                               *draw/road-junction/size*)))))
+  (with-canvas
+   (with-style ((fill-color *draw/road-junction/color*))
+     (fill (circle (get junction 'pos)
+                   *draw/road-junction/size*)))))
 
 (define (vec2-rotate vec angle)
   (matrix3-transform (matrix3-rotate angle) vec))
+
+(define (angle-of vec)
+  (atan (vec2-y vec) (vec2-x vec)))
+
+(define pi/4 (/ pi 4))
+
+(define (rotate-in-place angle place painter)
+  ;; why does this work?? should be backwards
+  ((compose
+    (cut translate (vec2* place -1) <>)
+    (cut rotate angle <>)
+    (cut translate place <>))
+   painter))
 
 (define (draw-road-segment segment)
 
@@ -36,7 +53,7 @@
          (v-stop (get segment 'stop-junction 'pos))
          (v-segment (vec2- v-stop v-start))
          (v-tangent (vec2-normalize v-segment))
-         (v-ortho (vec2-rotate v-tangent (/ pi 4)))
+         (v-ortho (vec2-rotate v-tangent pi/4))
          (v-to-edge (vec2* v-ortho (/ *draw/road-segment/width* 2)))
          (p-1 (vec2+ v-start v-to-edge))
          (p-2 (vec2- v-start v-to-edge))
@@ -45,23 +62,33 @@
          (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
 
     (define (draw-road-lane lane)
-      (match (get lane 'direction)
-        ('forw
-         (with-style ((stroke-color green))
-           (stroke (line (vec2+ v-start (vec2* v-to-edge 1/2))
-                         (vec2+ v-stop  (vec2* v-to-edge 1/2))))))
-        ('back
-         (with-style ((stroke-color red))
-           (stroke (line (vec2- v-start (vec2* v-to-edge 1/2))
-                         (vec2- v-stop  (vec2* v-to-edge 1/2))))))))
+      (let* ((direction
+              (get lane 'direction))
+             (lane-offset
+              ;; TODO: split this out into its own <road-lane> method
+              (vec2* v-to-edge (match direction ('forw 1/2) ('back -1/2))))
+             (line-painter
+              (stroke (line (vec2+ v-start lane-offset)
+                            (vec2+ v-stop lane-offset))))
+             (arrow-pos
+              (fold vec2+ v-start (list (vec2* v-segment 1/2) lane-offset)))
+             (v-lane
+              (vec2* v-segment (match direction ('forw 1) ('back -1))))
+             (arrow-painter
+              (rotate-in-place (+ pi/2 (angle-of v-lane))
+                               arrow-pos
+                               (fill (regular-polygon arrow-pos 3
+                                                      *draw/road-lane/arrow-size*)))))
+        (with-style ((stroke-color *draw/road-lane/color*)
+                     (fill-color *draw/road-lane/color*))
+          (superimpose line-painter arrow-painter))))
 
     (let* ((lane-painters (map draw-road-lane (get segment 'lanes))))
-
-      (with-canvas (apply superimpose road-painter lane-painters)))))
+      (with-canvas (apply superimpose road-painter (reverse lane-painters))))))
 
 (define (draw-actor actor)
   (define pos (vec2 (get-pos-x actor) (get-pos-y actor)))
-  (with-canvas (with-style ((fill-color blue))
+  (with-canvas (with-style ((fill-color *draw/actor/color*))
                  (fill (circle pos 10.0)))))
 
 (define (draw-world world)

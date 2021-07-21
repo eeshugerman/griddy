@@ -147,10 +147,6 @@
   (get-pos-y (get actor 'location)))
 
 (define-class <world> ()
-  (size-x
-   #:init-value 0)
-  (size-y
-   #:init-value 0)
   (static-items ;; roads, etc
    #:init-thunk list))
 
@@ -196,13 +192,6 @@
 
 (define-method (add! (world <world>) (static-item <static>))
   (slot-add! world 'static-items static-item))
-
-(define-method (add! (world <world>) (junction <road-junction>))
-  (if (> (get junction 'pos-x) (get world 'size-x))
-      (slot-set! world 'size-x (get junction 'pos-x )))
-  (if (> (get junction 'pos-y) (get world 'size-y))
-      (slot-set! world 'size-y (get junction 'pos-y )))
-  (next-method))
 
 (define-method (add! (world <world>) (segment <road-segment>))
   (unless (and (slot-bound? segment 'start-junction)
