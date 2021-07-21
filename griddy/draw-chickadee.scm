@@ -1,4 +1,5 @@
 (define-module (griddy draw-chickadee)
+  #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
   #:use-module (chickadee math)
@@ -19,18 +20,17 @@
 (define *draw/actor/size* 10)
 (define *draw/actor/color* "yellow")
 
-(define wrap-canvas (compose draw-canvas make-canvas))
+(define with-canvas (compose draw-canvas make-canvas))
 
 (define (draw-road-junction junction)
-  (wrap-canvas (with-style ((fill-color *draw/road-junction/color*))
-     (fill (circle (get junction 'pos)
-                   *draw/road-junction/size*)))))
+  (with-canvas (with-style ((fill-color *draw/road-junction/color*))
+                 (fill (circle (get junction 'pos)
+                               *draw/road-junction/size*)))))
 
 (define (vec2-rotate vec angle)
   (matrix3-transform (matrix3-rotate angle) vec))
 
 (define (draw-road-segment segment)
-  ;; (define (draw-road-lane lane))
 
   (let* ((v-start (get segment 'start-junction 'pos))
          (v-stop (get segment 'stop-junction 'pos))
@@ -41,13 +41,27 @@
          (p-1 (vec2+ v-start v-to-edge))
          (p-2 (vec2- v-start v-to-edge))
          (p-3 (vec2- v-stop v-to-edge))
-         (p-4 (vec2+ v-stop v-to-edge)))
+         (p-4 (vec2+ v-stop v-to-edge))
+         (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
 
-    (wrap-canvas (fill (polyline p-1 p-2 p-3 p-4 p-1)))))
+    (define (draw-road-lane lane)
+      (match (get lane 'direction)
+        ('forw
+         (with-style ((stroke-color green))
+           (stroke (line (vec2+ v-start (vec2* v-to-edge 1/2))
+                         (vec2+ v-stop  (vec2* v-to-edge 1/2))))))
+        ('back
+         (with-style ((stroke-color red))
+           (stroke (line (vec2- v-start (vec2* v-to-edge 1/2))
+                         (vec2- v-stop  (vec2* v-to-edge 1/2))))))))
+
+    (let* ((lane-painters (map draw-road-lane (get segment 'lanes))))
+
+      (with-canvas (apply superimpose road-painter lane-painters)))))
 
 (define (draw-actor actor)
   (define pos (vec2 (get-pos-x actor) (get-pos-y actor)))
-  (wrap-canvas (with-style ((fill-color green))
+  (with-canvas (with-style ((fill-color blue))
                  (fill (circle pos 10.0)))))
 
 (define (draw-world world)
