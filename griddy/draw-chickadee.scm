@@ -1,7 +1,9 @@
 (define-module (griddy draw-chickadee)
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
+  #:use-module (chickadee math)
   #:use-module (chickadee math vector)
+  #:use-module (chickadee math matrix)
   #:use-module (chickadee graphics path)
   #:use-module (chickadee graphics color)
   #:use-module (griddy core)
@@ -24,14 +26,24 @@
      (fill (circle (get junction 'pos)
                    *draw/road-junction/size*)))))
 
+(define (vec2-rotate vec angle)
+  (matrix3-transform (matrix3-rotate angle) vec))
+
 (define (draw-road-segment segment)
-  (define (draw-road-lane lane)
-    )
-  ;; TODO: Use filled polygon?
-  (wrap-canvas ((with-style ((stroke-width *draw/road-segment/width*)
-                             (stroke-color *draw/road-segment/color*))
-                  (stroke (line (get segment 'start-junction 'pos)
-                                (get segment 'stop-junction 'pos)))))))
+  ;; (define (draw-road-lane lane))
+
+  (let* ((v-start (get segment 'start-junction 'pos))
+         (v-stop (get segment 'stop-junction 'pos))
+         (v-segment (vec2- v-stop v-start))
+         (v-tangent (vec2-normalize v-segment))
+         (v-ortho (vec2-rotate v-tangent (/ pi 4)))
+         (v-to-edge (vec2* v-ortho (/ *draw/road-segment/width* 2)))
+         (p-1 (vec2+ v-start v-to-edge))
+         (p-2 (vec2- v-start v-to-edge))
+         (p-3 (vec2- v-stop v-to-edge))
+         (p-4 (vec2+ v-stop v-to-edge)))
+
+    (wrap-canvas (fill (polyline p-1 p-2 p-3 p-4 p-1)))))
 
 (define (draw-actor actor)
   (define pos (vec2 (get-pos-x actor) (get-pos-y actor)))
