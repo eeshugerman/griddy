@@ -64,8 +64,8 @@
     (define (draw-road-lane lane)
       (let* ((direction
               (get lane 'direction))
+             ;; TODO: split this out into its own <road-lane> method
              (lane-offset
-              ;; TODO: split this out into its own <road-lane> method
               (vec2* v-to-edge (match direction ('forw 1/2) ('back -1/2))))
              (line-painter
               (stroke (line (vec2+ v-start lane-offset)

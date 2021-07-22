@@ -23,7 +23,7 @@
             get-road-junctions
             get-road-lanes
             get-road-segments
-            length-of
+            get-length
             link!
             next-step
             pop-step!
@@ -82,12 +82,7 @@
    #:init-keyword #:direction)
   (actors
    ;; or maybe just use a list and lean on (chickadee math grid)
-   #:init-form (make-bbtree
-                >
-                ;; (lambda (actor-1 actor-2)
-                ;;   (> (get actor-1 'location 'pos-param)
-                ;;      (get actor-2 'location 'pos-param)))
-                )))
+   #:init-form (make-bbtree >)))
 
 (define-class <road-segment> (<static>)
   start-junction
@@ -95,7 +90,7 @@
   (lanes
    #:init-thunk list))
 
-(define-method (length-of (segment <road-segment>))
+(define-method (get-length (segment <road-segment>))
   (l2 (get segment 'start-junction 'pos)
       (get segment 'stop-junction 'pos)))
 

@@ -52,7 +52,7 @@
        ('back -1))
      (get actor 'max-speed)
      *simulate/time-step*
-     (/ 1 (length-of (get actor 'location 'road-lane 'segment)))))
+     (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
 
 (define (route-step/=nil= actor ++)
   (lambda ()
@@ -99,7 +99,7 @@
             (match (list done? direction-current direction-next)
               ((#f _ _) pos-param-next-naive)
               ;; TODO: using `pos-param-next-naive' here assumes
-              ;;       (= (length-of lane-current) (length-of lane-next))
+              ;;       (= (get-length lane-current) (get-length lane-next))
               ((#t 'forw 'forw) (- pos-param-next-naive 1))
               ((#t 'forw 'back) (- 1 (- pos-param-next-naive 1)))
               ((#t 'back 'forw) (- pos-param-next-naive))
