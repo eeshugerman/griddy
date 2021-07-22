@@ -30,6 +30,8 @@
             segment
             set-route))
 
+(define *core/road-lane/width* 50)
+
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
 
@@ -89,6 +91,12 @@
   stop-junction
   (lanes
    #:init-thunk list))
+
+(define-method (get-offset (segment <road-segment>) (lane <road-lane>))
+  (unless (memq lane (get segment 'lanes))
+    (throw 'not-linked segment lane))
+
+  )
 
 (define-method (get-length (segment <road-segment>))
   (l2 (get segment 'start-junction 'pos)
