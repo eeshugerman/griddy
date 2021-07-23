@@ -45,7 +45,6 @@
    painter))
 
 (define (draw-road-segment segment)
-
   (let* ((v-start (get segment 'start-junction 'pos))
          (v-stop (get segment 'stop-junction 'pos))
          (v-to-edge (vec2* (get-v-ortho segment)
@@ -61,9 +60,9 @@
              (v-lane-offset (get-offset lane))
              (v-segment (vec2- v-stop v-start))
              (v-arrow-pos
-              (fold1 vec2+ (list v-start
-                                 (vec2* v-segment 1/2)
-                                 v-lane-offset)))
+              (vec2+/many v-start
+                          (vec2* v-segment 1/2)
+                          v-lane-offset))
              (v-lane
               (vec2* v-segment (match direction ('forw 1) ('back -1))))
              (arrow-painter

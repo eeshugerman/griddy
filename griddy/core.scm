@@ -34,7 +34,7 @@
             segment
             set-route))
 
-(define *core/road-lane/width* 50)
+(define *core/road-lane/width* 20)
 (define *core/road-segment/wiggle-room-%* 10)
 
 ;; classes ---------------------------------------------------------------------
@@ -51,11 +51,6 @@
   (slot-set! self 'pos (vec2 (get-keyword #:x initargs)
                              (get-keyword #:y initargs)))
   (next-method))
-
-(define-method (get-road-lanes (junction <road-junction>))
-  (fold (lambda (acc segment)
-          (append acc (get segment 'road-lanes)))
-        (list)))
 
 (define (is-sink? lane junction)
   (or (and (eq? (get lane 'segment 'start-junction) junction)
@@ -84,7 +79,7 @@
                          (get segment 'start-junction 'pos))))
 
 (define-method (get-v-ortho (segment <road-segment>))
-  (vec2-rotate (get-v-tangent segment) pi/4))
+  (vec2-rotate (get-v-tangent segment) pi/2))
 
 (define-method (get-lane-count (segment <road-segment>))
   (+ (get segment 'forw-lane-count)
@@ -163,11 +158,9 @@
          (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
          (v-segment (vec2- v-stop v-start))
          (v-tangent (vec2-normalize v-segment)))
-    (vec2+ v-start
-           (vec2* v-tangent (get loc 'pos-param)))
-    (fold1 vec2+ (list v-start
-                       (vec2* v-tangent (get loc 'pos-param))
-                       (get-offset (get loc 'road-lane))))))
+    (vec2+/many v-start
+                (vec2* v-tangent (get loc 'pos-param))
+                (get-offset (get loc 'road-lane)))))
 
 (define-class <route> ()
   (steps

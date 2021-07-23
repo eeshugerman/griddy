@@ -52,10 +52,14 @@
          (lane-3 (first (get-road-lanes world)))
 
          (actor-1 (make <actor>))
-         (location-1 (make <location> #:road-lane lane-3 #:pos-param 0.25))
+         (location-1 (make <location>
+                       #:road-lane lane-3
+                       #:pos-param 0.25))
 
          (actor-2 (make <actor>))
-         (location-2 (make <location> #:road-lane lane-2 #:pos-param 0.75)))
+         (location-2 (make <location>
+                       #:road-lane lane-2
+                       #:pos-param 0.75)))
 
     (link! actor-1 location-1)
     (set-route actor-1 (make <route> #:steps '((arrive-at 0.75))))
