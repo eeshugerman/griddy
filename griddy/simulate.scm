@@ -43,7 +43,6 @@
     (copy-slot-if-bound! 'max-speed)
     (copy-slot-if-bound! 'route)
     new-actor)
-
   ++)
 
 (define (get-pos-param-delta-max actor)

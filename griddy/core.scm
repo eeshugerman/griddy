@@ -156,10 +156,9 @@
 (define-method (get-pos (loc <location>))
   (let* ((v-start (get loc 'road-lane 'segment 'start-junction 'pos))
          (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
-         (v-segment (vec2- v-stop v-start))
-         (v-tangent (vec2-normalize v-segment)))
+         (v-segment (vec2- v-stop v-start)))
     (vec2+/many v-start
-                (vec2* v-tangent (get loc 'pos-param))
+                (vec2* v-segment (get loc 'pos-param))
                 (get-offset (get loc 'road-lane)))))
 
 (define-class <route> ()
