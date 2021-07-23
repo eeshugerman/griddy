@@ -54,7 +54,7 @@
          (v-segment (vec2- v-stop v-start))
          (v-tangent (vec2-normalize v-segment))
          (v-ortho (vec2-rotate v-tangent pi/4))
-         (v-to-edge (vec2* v-ortho (/ *draw/road-segment/width* 2)))
+         (v-to-edge (vec2* v-ortho (/ (get-width segment) 2)))
          (p-1 (vec2+ v-start v-to-edge))
          (p-2 (vec2- v-start v-to-edge))
          (p-3 (vec2- v-stop v-to-edge))
@@ -87,9 +87,8 @@
       (with-canvas (apply superimpose road-painter (reverse lane-painters))))))
 
 (define (draw-actor actor)
-  (define pos (vec2 (get-pos-x actor) (get-pos-y actor)))
   (with-canvas (with-style ((fill-color *draw/actor/color*))
-                 (fill (circle pos 10.0)))))
+                 (fill (circle (get-pos actor) 10.0)))))
 
 (define (draw-world world)
   (for-each draw-road-segment (get-road-segments world))
