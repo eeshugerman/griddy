@@ -5,7 +5,8 @@
   #:use-module (ice-9 match)
   #:export (get
             slot-add!
-            zip-to-alist))
+            zip-to-alist
+            fold1))
 
 
 ;; is this the best option?
@@ -52,3 +53,6 @@
              tail-1
              tail-2)))))
 
+
+(define (fold1 f l)
+  (fold f (car l) (cdr l)))

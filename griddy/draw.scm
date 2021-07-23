@@ -9,6 +9,7 @@
   #:use-module (chickadee graphics path)
   #:use-module (chickadee graphics color)
   #:use-module (griddy core)
+  #:use-module (griddy math)
   #:use-module (griddy util)
   #:export (draw-world))
 
@@ -31,13 +32,9 @@
      (fill (circle (get junction 'pos)
                    *draw/road-junction/size*)))))
 
-(define (vec2-rotate vec angle)
-  (matrix3-transform (matrix3-rotate angle) vec))
-
 (define (angle-of vec)
   (atan (vec2-y vec) (vec2-x vec)))
 
-(define pi/4 (/ pi 4))
 
 (define (rotate-in-place angle place painter)
   ;; why does this work?? should be backwards
@@ -51,10 +48,8 @@
 
   (let* ((v-start (get segment 'start-junction 'pos))
          (v-stop (get segment 'stop-junction 'pos))
-         (v-segment (vec2- v-stop v-start))
-         (v-tangent (vec2-normalize v-segment))
-         (v-ortho (vec2-rotate v-tangent pi/4))
-         (v-to-edge (vec2* v-ortho (/ (get-width segment) 2)))
+         (v-to-edge (vec2* (get-v-ortho segment)
+                           (/2 (get-width segment))))
          (p-1 (vec2+ v-start v-to-edge))
          (p-2 (vec2- v-start v-to-edge))
          (p-3 (vec2- v-stop v-to-edge))
@@ -62,23 +57,23 @@
          (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
 
     (define (draw-road-lane lane)
-      (let* ((direction
-              (get lane 'direction))
-             ;; TODO: split this out into its own <road-lane> method
-             (lane-offset
-              (vec2* v-to-edge (match direction ('forw 1/2) ('back -1/2))))
-             (line-painter
-              (stroke (line (vec2+ v-start lane-offset)
-                            (vec2+ v-stop lane-offset))))
-             (arrow-pos
-              (fold vec2+ v-start (list (vec2* v-segment 1/2) lane-offset)))
+      (let* ((direction (get lane 'direction))
+             (v-lane-offset (get-offset lane))
+             (v-segment (vec2- v-stop v-start))
+             (v-arrow-pos
+              (fold1 vec2+ (list v-start
+                                 (vec2* v-segment 1/2)
+                                 v-lane-offset)))
              (v-lane
               (vec2* v-segment (match direction ('forw 1) ('back -1))))
              (arrow-painter
               (rotate-in-place (+ pi/2 (angle-of v-lane))
-                               arrow-pos
-                               (fill (regular-polygon arrow-pos 3
-                                                      *draw/road-lane/arrow-size*)))))
+                               v-arrow-pos
+                               (fill (regular-polygon v-arrow-pos 3
+                                                      *draw/road-lane/arrow-size*))))
+             (line-painter
+              (stroke (line (vec2+ v-start v-lane-offset)
+                            (vec2+ v-stop v-lane-offset)))))
         (with-style ((stroke-color *draw/road-lane/color*)
                      (fill-color *draw/road-lane/color*))
           (superimpose line-painter arrow-painter))))
@@ -93,5 +88,4 @@
 (define (draw-world world)
   (for-each draw-road-segment (get-road-segments world))
   (for-each draw-road-junction (get-road-junctions world))
-  (for-each draw-actor (get-actors world))
-  )
+  (for-each draw-actor (get-actors world)))

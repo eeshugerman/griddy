@@ -18,19 +18,24 @@
             <world>
             add!
             get-actors
+            get-offset
             get-pos
             get-road-junctions
             get-road-lanes
             get-road-segments
             get-length
+            get-v-ortho
+            get-v-tangent
             get-width
             link!
+            match-direction
             next-step
             pop-step!
             segment
             set-route))
 
 (define *core/road-lane/width* 50)
+(define *core/road-segment/wiggle-room-%* 10)
 
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
@@ -64,21 +69,6 @@
 (define-method (get-sources (junction <road-junction>))
   (filter (compose not is-sink?) (get-road-lanes junction)))
 
-(define-class <road-lane> (<static>)
-  segment
-  (direction  ;; 'forw or 'back, relative to segment
-   #:init-keyword #:direction)
-  rank ;; 1..
-  (actors
-   ;; or maybe just use a list and lean on (chickadee math grid)
-   #:init-form (make-bbtree >)))
-
-(define-method (get-offset (lane <road-lane>))
-  (unless (memq lane (get segment 'lanes))
-    (throw 'not-linked segment lane))
-  ;; todo
-  )
-
 (define-class <road-segment> (<static>)
   start-junction
   stop-junction
@@ -88,6 +78,13 @@
    #:init-value 0)
   (back-lane-count
    #:init-value 0))
+
+(define-method (get-v-tangent (segment <road-segment>))
+  (vec2-normalize (vec2- (get segment 'stop-junction 'pos)
+                         (get segment 'start-junction 'pos))))
+
+(define-method (get-v-ortho (segment <road-segment>))
+  (vec2-rotate (get-v-tangent segment) pi/4))
 
 (define-method (get-lane-count (segment <road-segment>))
   (+ (get segment 'forw-lane-count)
@@ -107,13 +104,52 @@
     (slot-set! segment slot new-val)))
 
 (define-method (get-width (segment <road-segment>))
-  (* (+ 1 (/ *core/road-segment/%-wiggle* 10))
+  (* (+ 1 (/ *core/road-segment/wiggle-room-%* 100))
      *core/road-lane/width*
      (get-lane-count segment)))
 
 (define-method (get-length (segment <road-segment>))
   (l2 (get segment 'start-junction 'pos)
       (get segment 'stop-junction 'pos)))
+
+(define-class <road-lane> (<static>)
+  segment
+  (direction  ;; 'forw or 'back, relative to segment
+   #:init-keyword #:direction)
+  rank ;; 0..
+  (actors
+   ;; or maybe just use a list and lean on (chickadee math grid)
+   #:init-form (make-bbtree >)))
+
+;; (define-syntax-rule (match-direction lane forw back)
+;;   (match (get lane 'direction)
+;;     ('forw forw)
+;;     ('back back)))
+
+(define-method (get-offset (lane <road-lane>))
+  (let* ((segment (get lane 'segment))
+         (lane-count-from-edge
+          (match (get lane 'direction)
+            ('forw (- (get-lane-count segment 'forw)
+                      (get lane 'rank)
+                      1))
+            ('back (+ (get-lane-count segment 'forw)
+                      (get lane 'rank)))))
+         (v-ortho
+          (get-v-ortho segment))
+         (v-segment-edge
+          (vec2* v-ortho (* *core/road-lane/width*
+                            (get-lane-count segment)
+                            -1/2)))
+         (v-lane-edge
+          (vec2+ v-segment-edge
+                 (vec2* v-ortho (* *core/road-lane/width*
+                                   lane-count-from-edge))))
+         (v-lane-center
+          (vec2+ v-lane-edge
+                 (vec2* v-ortho (* *core/road-lane/width*
+                                   1/2)))))
+    v-lane-center))
 
 (define-class <location> ()
   (road-lane
@@ -123,17 +159,15 @@
    #:init-keyword #:pos-param))
 
 (define-method (get-pos (loc <location>))
-  (let* ((v-start (get segment 'start-junction 'pos))
-         (v-stop (get segment 'stop-junction 'pos))
+  (let* ((v-start (get loc 'road-lane 'segment 'start-junction 'pos))
+         (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
          (v-segment (vec2- v-stop v-start))
          (v-tangent (vec2-normalize v-segment)))
     (vec2+ v-start
            (vec2* v-tangent (get loc 'pos-param)))
-    ;; (fold vec2+
-    ;;       v-start
-    ;;       (list (vec2* v-tangent (get loc 'pos-param))
-    ;;             (get-offset (get loc 'lane))))
-    ))
+    (fold1 vec2+ (list v-start
+                       (vec2* v-tangent (get loc 'pos-param))
+                       (get-offset (get loc 'road-lane))))))
 
 (define-class <route> ()
   (steps
@@ -189,8 +223,8 @@
       (throw 'lane-already-linked lane segment))
 
   (let ((direction (get lane 'direction)))
-    (bump-lane-count! segment direction)
-    (slot-set! lane 'rank (get-lane-count segment direction)))
+    (slot-set! lane 'rank (get-lane-count segment direction))
+    (bump-lane-count! segment direction))
   (slot-set! lane 'segment segment)
   (slot-add! segment 'lanes lane))
 
