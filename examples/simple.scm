@@ -17,7 +17,7 @@
   (define world (make <world>))
 
   (let* ((junction-1 (make <road-junction> #:x 250 #:y 250)) ;; center
-         (junction-2 (make <road-junction> #:x 150 #:y 400)) ;; mid upper
+         (junction-2 (make <road-junction> #:x 300 #:y 400)) ;;
          (junction-3 (make <road-junction> #:x 400 #:y 250)) ;; mid right
 
          (segment-1 (make <road-segment>)) ;; vertical
@@ -66,6 +66,6 @@
     (link! actor-2 location-2)
     (set-route actor-2 (make <route>
                          #:steps `((turn-onto ,lane-1)
-                                   (arrive-at 0.5))))))
+                                   (arrive-at 0.75))))))
 
 (simulate make-skeleton add-actors!)

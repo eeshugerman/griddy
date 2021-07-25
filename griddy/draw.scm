@@ -66,7 +66,9 @@
              (v-lane
               (vec2* v-segment (match direction ('forw 1) ('back -1))))
              (arrow-painter
-              (rotate-in-place (+ pi/2 (angle-of v-lane))
+              ;; `rotate' rotates clockwise (?!), triangle starts
+              ;; pointing upwards
+              (rotate-in-place (* -1 (- (angle-of v-lane) pi/2))
                                v-arrow-pos
                                (fill (regular-polygon v-arrow-pos 3
                                                       *draw/road-lane/arrow-size*))))
