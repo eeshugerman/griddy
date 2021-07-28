@@ -31,8 +31,9 @@
             match-direction
             next-step
             pop-step!
+            push-agenda-item!
             segment
-            set-route))
+            set-route!))
 
 (define *core/road-lane/width* 20)
 (define *core/road-segment/wiggle-room-%* 10)
@@ -181,10 +182,15 @@
    #:init-value 25) ;; units / second
   (route
    #:init-form (make <route>)
-   #:setter set-route))
+   #:setter set-route!)
+  (agenda
+   #:init-thunk list))
 
 (define-method (get-pos (actor <actor>))
   (get-pos (get actor 'location)))
+
+(define-method (push-agenda-item! (actor <actor>) item)
+  (slot-add! actor 'agenda item))
 
 (define-class <world> ()
   (static-items ;; roads, etc
