@@ -24,6 +24,8 @@
             get-road-lanes
             get-road-segments
             get-length
+            get-midpoint
+            get-v
             get-v-ortho
             get-v-tangent
             get-width
@@ -59,10 +61,10 @@
       (and (eq? (get lane 'segment 'stop-junction) junction)
            (eq? (get lane 'direction) 'back))))
 
-(define-method (get-sinks (junction <road-junction>))
+(define-method (get-incoming-lanes (junction <road-junction>))
   (filter is-sink? (get-road-lanes junction)))
 
-(define-method (get-sources (junction <road-junction>))
+(define-method (get-outgoing-lanes (junction <road-junction>))
   (filter (compose not is-sink?) (get-road-lanes junction)))
 
 (define-class <road-segment> (<static>)
@@ -75,9 +77,12 @@
   (back-lane-count
    #:init-value 0))
 
+(define-method (get-v (segment <road-segment>))
+  (vec2- (get segment 'stop-junction 'pos)
+         (get segment 'start-junction 'pos)))
+
 (define-method (get-v-tangent (segment <road-segment>))
-  (vec2-normalize (vec2- (get segment 'stop-junction 'pos)
-                         (get segment 'start-junction 'pos))))
+  (vec2-normalize (get-v segment)))
 
 (define-method (get-v-ortho (segment <road-segment>))
   (vec2-rotate (get-v-tangent segment) pi/2))
@@ -108,6 +113,10 @@
   (l2 (get segment 'start-junction 'pos)
       (get segment 'stop-junction 'pos)))
 
+(define-method (get-midpoint (segment <road-segment>))
+  (vec2+ (get segment 'start-junction)
+         (vec2* (get-v segment) 1/2)))
+
 (define-class <road-lane> (<static>)
   segment
   (direction  ;; 'forw or 'back, relative to segment
@@ -117,10 +126,10 @@
    ;; or maybe just use a list and lean on (chickadee math grid)
    #:init-form (make-bbtree >)))
 
-;; (define-syntax-rule (match-direction lane forw back)
-;;   (match (get lane 'direction)
-;;     ('forw forw)
-;;     ('back back)))
+(define-syntax-rule (match-direction lane if-forw if-back)
+  (case (get lane 'direction)
+    ((forw) if-forw)
+    ((back) if-back)))
 
 (define-method (get-offset (lane <road-lane>))
   (let* ((segment (get lane 'segment))

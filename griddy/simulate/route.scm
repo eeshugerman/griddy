@@ -2,9 +2,11 @@
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
+  #:use-module (chickadee math path-finding)
   #:use-module (griddy core)
   #:use-module (griddy util)
-  #:export (advance-route!))
+  #:export (find-route
+            advance/route!))
 
 (define *simulate/fps* 25)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
@@ -16,7 +18,6 @@
      (get actor 'max-speed)
      *simulate/time-step*
      (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
-
 
 (define (route-step/arrive-at actor ++)
   (lambda (pos-param-target)
@@ -67,8 +68,44 @@
                        #:pos-param pos-param-next))
       (if done? (pop-step! (get actor++ 'route))))))
 
+(define (neighbors lane)
+  (get-outgoing-lanes
+   (get lane
+        'segment
+        (match-direction lane
+          'stop-junciton
+          'start-junction))))
+
+(define (cost lane-1 lane-2)
+  "actual cost of moving between neighboring nodes"
+  (get-length (get lane-1 'segment))) ;; TODO: not sure about this
+
+(define (distance lane-1 lane-2)
+  "approximate cost of moving between nodes"
+  (l2 (get-midpoint (get lane-1 'segment))
+      (get-midpoint (get lane-2 'segment))))
+
+(define-method (find-route (actor <actor>) (loc <location>))
+  (let* ((route-finder
+          (make-path-finder))  ;; TODO: safe to share this?
+         (start-lane
+          (get actor 'location 'road-lane))
+         (stop-lane
+          (get loc 'road-lane))
+         (lanes
+          (a* route-finder start-lane end-lane neighbors cost distance))
+         (lane->route-step
+          (cut cons 'turn-onto <>))
+         (pos-param->route-step
+          (cut cons 'arrive-at <>))
+         (steps
+          (append (map lane->route-step lanes)
+                  (list (pos-param->route-step (get loc 'pos-param))))))
+
+    (make <route> #:steps steps))
+
 ;; TODO: why doesn't this work with <actor>?
-(define-method (advance-on-route! (actor <object>) (++ <generic>))
+(define-method (advance/route! (actor <object>) (++ <generic>))
   (match (next-step (get actor 'route))
     (('arrive-at pos-param)
      ((route-step/arrive-at actor ++) pos-param))

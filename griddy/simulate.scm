@@ -52,14 +52,15 @@
 
 (define-method (advance! (actor <actor>) (++ <generic>))
   (match actor
-    ((and (= 'agenda ()) (= 'route (= 'steps ())))
+    ((and (= 'agenda ())
+          (= 'route (= 'steps ())))
      (do-nothing actor ++))
     ((and (= 'agenda ('travel-to location))
           (= 'route (= 'steps ())))
-     (route-set! actor (get-route actor location)))
+     (route-set! actor (find-route actor location)))
     ((and (= 'agenda ())
           (= 'route (= 'steps (item attrs ...))))
-     (advance-on-route! actor ++))
+     (advance/route! actor ++))
     ((and (= 'agenda (item attrs ...))
           (= 'route (= 'steps (item attrs ...))))
      ;; what do? overwrite or append?
