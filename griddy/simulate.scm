@@ -64,7 +64,7 @@
     ((and (= 'agenda (item attrs ...))
           (= 'route (= 'steps (item attrs ...))))
      ;; what do? overwrite or append?
-     (throw 'unimplemented)))
+     (throw 'unimplemented))))
 
 (define world #f)
 

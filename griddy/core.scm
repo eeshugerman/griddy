@@ -31,8 +31,6 @@
             get-width
             link!
             match-direction
-            next-step
-            pop-step!
             push-agenda-item!
             segment
             set-route!))
@@ -54,18 +52,6 @@
   (slot-set! self 'pos (vec2 (get-keyword #:x initargs)
                              (get-keyword #:y initargs)))
   (next-method))
-
-(define (is-sink? lane junction)
-  (or (and (eq? (get lane 'segment 'start-junction) junction)
-           (eq? (get lane 'direction) 'forw))
-      (and (eq? (get lane 'segment 'stop-junction) junction)
-           (eq? (get lane 'direction) 'back))))
-
-(define-method (get-incoming-lanes (junction <road-junction>))
-  (filter is-sink? (get-road-lanes junction)))
-
-(define-method (get-outgoing-lanes (junction <road-junction>))
-  (filter (compose not is-sink?) (get-road-lanes junction)))
 
 (define-class <road-segment> (<static>)
   start-junction
@@ -175,14 +161,6 @@
   (steps
    #:init-thunk list
    #:init-keyword #:steps))
-
-(define-method (pop-step! (route <route>))
-  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
-
-(define-method (next-step (route <route>))
-  (if (null? (get route 'steps))
-      (list)
-      (car (get route 'steps))))
 
 (define-class <actor> ()
   location

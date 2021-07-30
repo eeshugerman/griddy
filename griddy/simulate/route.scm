@@ -5,11 +5,34 @@
   #:use-module (chickadee math path-finding)
   #:use-module (griddy core)
   #:use-module (griddy util)
+  #:use-module (griddy math)
   #:export (find-route
+            route-set!
             advance/route!))
 
 (define *simulate/fps* 25)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
+
+(define-method (pop-step! (route <route>))
+  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
+
+(define-method (next-step (route <route>))
+  (if (null? (get route 'steps))
+      (list)
+      (car (get route 'steps))))
+
+(define (is-sink? lane junction)
+  (or (and (eq? (get lane 'segment 'start-junction) junction)
+           (eq? (get lane 'direction) 'forw))
+      (and (eq? (get lane 'segment 'stop-junction) junction)
+           (eq? (get lane 'direction) 'back))))
+
+(define-method (get-incoming-lanes (junction <road-junction>))
+  (filter is-sink? (get-road-lanes junction)))
+
+(define-method (get-outgoing-lanes (junction <road-junction>))
+  (filter (compose not is-sink?) (get-road-lanes junction)))
+
 
 (define (get-pos-param-delta-max actor)
   (* (match (get actor 'location 'road-lane 'direction)
@@ -93,7 +116,7 @@
          (stop-lane
           (get loc 'road-lane))
          (lanes
-          (a* route-finder start-lane end-lane neighbors cost distance))
+          (a* route-finder start-lane stop-lane neighbors cost distance))
          (lane->route-step
           (cut cons 'turn-onto <>))
          (pos-param->route-step
@@ -102,7 +125,7 @@
           (append (map lane->route-step lanes)
                   (list (pos-param->route-step (get loc 'pos-param))))))
 
-    (make <route> #:steps steps))
+    (make <route> #:steps steps)))
 
 ;; TODO: why doesn't this work with <actor>?
 (define-method (advance/route! (actor <object>) (++ <generic>))
