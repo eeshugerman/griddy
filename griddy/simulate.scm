@@ -51,18 +51,15 @@
                         #:pos-param (get actor 'location 'pos-param)))))
 
 (define-method (advance! (actor <actor>) (++ <generic>))
-  (match actor
-    ((and (= 'agenda ())
-          (= 'route (= 'steps ())))
+  (match (list (get actor 'agenda) (get actor 'route 'steps))
+    ((()())
      (do-nothing actor ++))
-    ((and (= 'agenda ('travel-to location))
-          (= 'route (= 'steps ())))
-     (route-set! actor (find-route actor location)))
-    ((and (= 'agenda ())
-          (= 'route (= 'steps (item attrs ...))))
+    (((('travel-to location) rest ...) ())
+     (set-route! actor (find-route actor location))
+     (set-agenda! actor rest))
+    ((() (_ ..1))
      (advance/route! actor ++))
-    ((and (= 'agenda (item attrs ...))
-          (= 'route (= 'steps (item attrs ...))))
+    ((_ ..1) (_ ..1)
      ;; what do? overwrite or append?
      (throw 'unimplemented))))
 

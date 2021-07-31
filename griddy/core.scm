@@ -171,7 +171,8 @@
    #:init-form (make <route>)
    #:setter set-route!)
   (agenda
-   #:init-thunk list))
+   #:init-thunk list
+   #:setter set-agenda!))
 
 (define-method (get-pos (actor <actor>))
   (get-pos (get actor 'location)))

@@ -7,7 +7,6 @@
   #:use-module (griddy util)
   #:use-module (griddy math)
   #:export (find-route
-            route-set!
             advance/route!))
 
 (define *simulate/fps* 25)
@@ -110,7 +109,7 @@
 
 (define-method (find-route (actor <actor>) (loc <location>))
   (let* ((route-finder
-          (make-path-finder))  ;; TODO: safe to share this?
+          (make-path-finder))  ;; TODO: safe to reuse this?
          (start-lane
           (get actor 'location 'road-lane))
          (stop-lane
