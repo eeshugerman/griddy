@@ -130,6 +130,7 @@
 
 ;; TODO: why doesn't this work with <actor>?
 (define-method (advance/route! (actor <object>) (++ <generic>))
+  ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
   (match (next-step (get actor 'route))
     (('arrive-at pos-param)
      ((route-step/arrive-at actor ++) pos-param))

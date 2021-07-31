@@ -171,7 +171,7 @@
    #:init-form (make <route>)
    #:setter set-route!)
   (agenda
-   #:init-thunk list ;; TODO: use a queue
+   #:init-thunk list
    #:setter set-agenda!))
 
 (define-method (get-pos (actor <actor>))
