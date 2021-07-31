@@ -57,7 +57,7 @@
                 (+ pos-param-current pos-param-delta-max))))
       (when done
         (pop-step! (get actor++ 'route))
-        (pop-agenda-item! actor))
+        (agenda-pop! actor))
       (link! actor++ (make <location>
                        #:road-lane (++ lane-current)
                        #:pos-param pos-param-next)))))
@@ -109,7 +109,9 @@
   (l2 (get-midpoint (get lane-1 'segment))
       (get-midpoint (get lane-2 'segment))))
 
-(define-method (find-route (actor <actor>) (loc <location>))
+;; TODO: why doesn't this work as a method?
+;; (define-method (find-route (actor <actor>) (loc <location>))
+(define (find-route actor loc)
   (let* ((route-finder
           (make-path-finder))  ;; TODO: safe to reuse this?
          (start-lane

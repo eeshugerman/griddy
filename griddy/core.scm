@@ -31,7 +31,8 @@
             get-width
             link!
             match-direction
-            push-agenda-item!
+            agenda-pop!
+            agenda-append!
             segment
             set-route!))
 
@@ -177,10 +178,10 @@
 (define-method (get-pos (actor <actor>))
   (get-pos (get actor 'location)))
 
-(define-method (append-agenda-item! (actor <actor>) item)
+(define-method (agenda-append! (actor <actor>) item)
   (slot-append! actor 'agenda item))
 
-(define-method (pop-agenda-item! (actor <actor>))
+(define-method (agenda-pop! (actor <actor>))
   (let ((current-agenda (get actor 'agenda)))
     (slot-set! actor 'agenda (cdr current-agenda))
     (car current-agenda)))

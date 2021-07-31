@@ -5,6 +5,7 @@
   #:use-module (ice-9 match)
   #:export (get
             slot-add!
+            slot-append!
             zip-to-alist))
 
 

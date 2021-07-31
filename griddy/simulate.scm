@@ -55,6 +55,7 @@
     ((()())
      (do-nothing actor ++))
     (((('travel-to dest) ..1) ())
+     ;; DEBUG: why doesn't dest have 'road-lane??
      (set-route! actor (find-route actor dest)))
     ((('travel-to dest) (_ ..1))
      (advance/route! actor ++))))

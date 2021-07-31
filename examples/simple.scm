@@ -51,21 +51,21 @@
          (lane-3 (first (get-road-lanes world)))
 
          (actor-1 (make <actor>))
-         (location-1 (make <location>
-                       #:road-lane lane-3
-                       #:pos-param 0.25))
+         (location-1
+          (make <location> #:road-lane lane-3 #:pos-param 0.25))
+         (dest-1
+          (make <location> #:road-lane lane-3 #:pos-param 0.75))
 
          (actor-2 (make <actor>))
-         (location-2 (make <location>
-                       #:road-lane lane-2
-                       #:pos-param 0.75)))
+         (location-2
+          (make <location> #:road-lane lane-2 #:pos-param 0.75))
+         (dest-2
+          (make <location> #:road-lane lane-1 #:pos-param 0.75)))
 
     (link! actor-1 location-1)
-    (set-route! actor-1 (make <route> #:steps '((arrive-at 0.75))))
+    (agenda-append! actor-1 `(travel-to ,dest-1))
 
     (link! actor-2 location-2)
-    (set-route! actor-2 (make <route>
-                          #:steps `((turn-onto ,lane-1)
-                                   (arrive-at 0.75))))))
+    (agenda-append! actor-2 `(travel-to ,dest-2))))
 
 (simulate make-skeleton add-actors!)
