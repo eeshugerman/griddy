@@ -17,10 +17,19 @@
 (define-method (add-to (container <bbtree>) pair)
   (bbtree-set container (car pair) (cdr pair)))
 
+(define-method (append-to (container <list>) val)
+  (append container (list val)))
+
 (define (slot-add! obj slot val)
   (let* ((old-container (slot-ref obj slot))
          (new-container (add-to old-container val)))
     (slot-set! obj slot new-container)))
+
+(define (slot-append! obj slot val)
+  (let* ((old-container (slot-ref obj slot))
+         (new-container (append-to old-container val)))
+    (slot-set! obj slot new-container)))
+
 
 (define (get obj . slots)
   ;; apparently `match' doesn't support tail patterns?

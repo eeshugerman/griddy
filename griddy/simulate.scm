@@ -54,14 +54,10 @@
   (match (list (get actor 'agenda) (get actor 'route 'steps))
     ((()())
      (do-nothing actor ++))
-    (((('travel-to location) rest ...) ())
-     (set-route! actor (find-route actor location))
-     (set-agenda! actor rest))
-    ((() (_ ..1))
-     (advance/route! actor ++))
-    ((_ ..1) (_ ..1)
-     ;; what do? overwrite or append?
-     (throw 'unimplemented))))
+    (((('travel-to dest) ..1) ())
+     (set-route! actor (find-route actor dest)))
+    ((('travel-to dest) (_ ..1))
+     (advance/route! actor ++))))
 
 (define world #f)
 

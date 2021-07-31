@@ -48,14 +48,16 @@
            (direction-current (get lane-current 'direction))
            (pos-param-current (get actor 'location 'pos-param))
            (pos-param-delta-max (get-pos-param-delta-max actor))
-           (done?
+           (done
             (>= (abs pos-param-delta-max)
                 (abs (- pos-param-target pos-param-current))))
            (pos-param-next
-            (if done?
+            (if done
                 pos-param-target
                 (+ pos-param-current pos-param-delta-max))))
-      (if done? (pop-step! (get actor++ 'route)))
+      (when done
+        (pop-step! (get actor++ 'route))
+        (pop-agenda-item! actor))
       (link! actor++ (make <location>
                        #:road-lane (++ lane-current)
                        #:pos-param pos-param-next)))))
@@ -71,13 +73,13 @@
             (+ pos-param-current pos-param-delta-max))
            (direction-next
             (get lane-next 'direction))
-           (done?
+           (done
             (match (list direction-current pos-param-next-naive)
               (('forw (? (cut >= <> 1))) #t)
               (('back (? (cut <= <> 0))) #t)
               (_ #f)))
            (pos-param-next
-            (match (list done? direction-current direction-next)
+            (match (list done direction-current direction-next)
               ((#f _ _) pos-param-next-naive)
               ;; TODO: using `pos-param-next-naive' here assumes
               ;;       (= (get-length lane-current) (get-length lane-next))
@@ -86,9 +88,9 @@
               ((#t 'back 'forw) (- pos-param-next-naive))
               ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
       (link! actor++ (make <location>
-                       #:road-lane (++ (if done? lane-next lane-current))
+                       #:road-lane (++ (if done lane-next lane-current))
                        #:pos-param pos-param-next))
-      (if done? (pop-step! (get actor++ 'route))))))
+      (if done (pop-step! (get actor++ 'route))))))
 
 (define (neighbors lane)
   (get-outgoing-lanes

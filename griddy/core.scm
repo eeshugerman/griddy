@@ -171,14 +171,19 @@
    #:init-form (make <route>)
    #:setter set-route!)
   (agenda
-   #:init-thunk list
+   #:init-thunk list ;; TODO: use a queue
    #:setter set-agenda!))
 
 (define-method (get-pos (actor <actor>))
   (get-pos (get actor 'location)))
 
-(define-method (push-agenda-item! (actor <actor>) item)
-  (slot-add! actor 'agenda item))
+(define-method (append-agenda-item! (actor <actor>) item)
+  (slot-append! actor 'agenda item))
+
+(define-method (pop-agenda-item! (actor <actor>))
+  (let ((current-agenda (get actor 'agenda)))
+    (slot-set! actor 'agenda (cdr current-agenda))
+    (car current-agenda)))
 
 (define-class <world> ()
   (static-items ;; roads, etc
