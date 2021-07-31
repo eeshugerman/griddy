@@ -1,7 +1,7 @@
 (define-module (griddy simulate route)
-  #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
+  #:use-module (oop goops)
   #:use-module (chickadee math path-finding)
   #:use-module (griddy core)
   #:use-module (griddy util)
@@ -19,19 +19,6 @@
   (if (null? (get route 'steps))
       (list)
       (car (get route 'steps))))
-
-(define (is-sink? lane junction)
-  (or (and (eq? (get lane 'segment 'start-junction) junction)
-           (eq? (get lane 'direction) 'forw))
-      (and (eq? (get lane 'segment 'stop-junction) junction)
-           (eq? (get lane 'direction) 'back))))
-
-(define-method (get-incoming-lanes (junction <road-junction>))
-  (filter is-sink? (get-road-lanes junction)))
-
-(define-method (get-outgoing-lanes (junction <road-junction>))
-  (filter (compose not is-sink?) (get-road-lanes junction)))
-
 
 (define (get-pos-param-delta-max actor)
   (* (match (get actor 'location 'road-lane 'direction)

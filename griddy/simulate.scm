@@ -54,10 +54,9 @@
   (match (list (get actor 'agenda) (get actor 'route 'steps))
     ((()())
      (do-nothing actor ++))
-    (((('travel-to dest) ..1) ())
-     ;; DEBUG: why doesn't dest have 'road-lane??
+    (((('travel-to dest) _ ...) ())
      (set-route! actor (find-route actor dest)))
-    ((('travel-to dest) (_ ..1))
+    (((('travel-to dest) _ ...) (_ ..1))
      (advance/route! actor ++))))
 
 (define world #f)

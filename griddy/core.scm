@@ -19,12 +19,14 @@
             add!
             get-actors
             get-offset
+            get-incoming-lanes
+            get-length
+            get-midpoint
+            get-outgoing-lanes
             get-pos
             get-road-junctions
             get-road-lanes
             get-road-segments
-            get-length
-            get-midpoint
             get-v
             get-v-ortho
             get-v-tangent
@@ -53,6 +55,26 @@
   (slot-set! self 'pos (vec2 (get-keyword #:x initargs)
                              (get-keyword #:y initargs)))
   (next-method))
+
+(define-method (get-lanes (junction <road-junction>))
+  (fold (lambda (segment lanes)
+          (append lanes (get segment 'lanes)))
+        (list)
+        (get junction 'segments)))
+
+(define (is-sink? lane junction)
+  (or (and (eq? (get lane 'segment 'start-junction) junction)
+           (eq? (get lane 'direction) 'forw))
+      (and (eq? (get lane 'segment 'stop-junction) junction)
+           (eq? (get lane 'direction) 'back))))
+
+(define-method (get-incoming-lanes (junction <road-junction>))
+  (filter (cut is-sink? <> junction)
+          (get-lanes junction)))
+
+(define-method (get-outgoing-lanes (junction <road-junction>))
+  (filter (compose not (cut is-sink? <> junction))
+          (get-lanes junction)))
 
 (define-class <road-segment> (<static>)
   start-junction

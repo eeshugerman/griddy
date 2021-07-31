@@ -66,6 +66,7 @@
     (agenda-append! actor-1 `(travel-to ,dest-1))
 
     (link! actor-2 location-2)
-    (agenda-append! actor-2 `(travel-to ,dest-2))))
+    (agenda-append! actor-2 `(travel-to ,dest-2))
+    ))
 
 (simulate make-skeleton add-actors!)
