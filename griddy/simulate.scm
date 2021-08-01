@@ -52,7 +52,7 @@
 
 (define-method (advance! (actor <actor>) (++ <generic>))
   (match (list (get actor 'agenda) (get actor 'route 'steps))
-    ((()())
+    ((() ())
      (do-nothing actor ++))
     (((('travel-to dest) _ ...) ())
      (set-route! actor (find-route actor dest)))

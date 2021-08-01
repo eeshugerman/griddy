@@ -73,7 +73,7 @@
           (get-lanes junction)))
 
 (define-method (get-outgoing-lanes (junction <road-junction>))
-  (filter (compose not (cut is-sink? <> junction))
+  (filter (negate (cut is-sink? <> junction))
           (get-lanes junction)))
 
 (define-class <road-segment> (<static>)

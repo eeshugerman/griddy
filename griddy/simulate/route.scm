@@ -80,12 +80,11 @@
       (if done (pop-step! (get actor++ 'route))))))
 
 (define (neighbors lane)
-  (get-outgoing-lanes
-   (get lane
-        'segment
-        (match-direction lane
-          'stop-junciton
-          'start-junction))))
+  (let ((junction (get lane 'segment (match-direction lane
+                                       'stop-junction
+                                       'start-junction))))
+    (filter (negate (cut eq? lane <>))
+            (get-outgoing-lanes junction))))
 
 (define (cost lane-1 lane-2)
   "actual cost of moving between neighboring nodes"
@@ -97,14 +96,14 @@
       (get-midpoint (get lane-2 'segment))))
 
 ;; TODO: why doesn't this work as a method?
-;; (define-method (find-route (actor <actor>) (loc <location>))
-(define (find-route actor loc)
+;; (define-method (find-route (actor <actor>) (dest <location>))
+(define (find-route actor dest)
   (let* ((route-finder
           (make-path-finder))  ;; TODO: safe to reuse this?
          (start-lane
           (get actor 'location 'road-lane))
          (stop-lane
-          (get loc 'road-lane))
+          (get dest 'road-lane))
          (lanes
           (a* route-finder start-lane stop-lane neighbors cost distance))
          (lane->route-step
@@ -113,7 +112,7 @@
           (cut cons 'arrive-at <>))
          (steps
           (append (map lane->route-step lanes)
-                  (list (pos-param->route-step (get loc 'pos-param))))))
+                  (list (pos-param->route-step (get dest 'pos-param))))))
 
     (make <route> #:steps steps)))
 
