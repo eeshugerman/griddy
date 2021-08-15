@@ -44,7 +44,7 @@
                 (+ pos-param-current pos-param-delta-max))))
       (when done
         (pop-step! (get actor++ 'route))
-        (agenda-pop! actor))
+        (agenda-pop! actor++))
       (link! actor++ (make <location>
                        #:road-lane (++ lane-current)
                        #:pos-param pos-param-next)))))
@@ -74,15 +74,18 @@
               ((#t 'forw 'back) (- 1 (- pos-param-next-naive 1)))
               ((#t 'back 'forw) (- pos-param-next-naive))
               ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
+      (when done
+        (pop-step! (get actor++ 'route)))
       (link! actor++ (make <location>
                        #:road-lane (++ (if done lane-next lane-current))
-                       #:pos-param pos-param-next))
-      (if done (pop-step! (get actor++ 'route))))))
+                       #:pos-param pos-param-next)))))
 
 (define (neighbors lane)
-  (let ((junction (get lane 'segment (match-direction lane
-                                       'stop-junction
-                                       'start-junction))))
+  (let ((junction (get lane
+                       'segment
+                       (match-direction lane
+                         'stop-junction
+                         'start-junction))))
     (filter (negate (cut eq? lane <>))
             (get-outgoing-lanes junction))))
 
@@ -111,9 +114,8 @@
          (pos-param->route-step
           (cut cons 'arrive-at <>))
          (steps
-          (append (map lane->route-step lanes)
+          (append (map lane->route-step (cdr lanes))
                   (list (pos-param->route-step (get dest 'pos-param))))))
-
     (make <route> #:steps steps)))
 
 ;; TODO: why doesn't this work with <actor>?

@@ -62,18 +62,18 @@
         (list)
         (get junction 'segments)))
 
-(define (is-sink? lane junction)
+(define (outgoing? lane junction)
   (or (and (eq? (get lane 'segment 'start-junction) junction)
            (eq? (get lane 'direction) 'forw))
       (and (eq? (get lane 'segment 'stop-junction) junction)
            (eq? (get lane 'direction) 'back))))
 
 (define-method (get-incoming-lanes (junction <road-junction>))
-  (filter (cut is-sink? <> junction)
+  (filter (negate (cut outgoing? <> junction))
           (get-lanes junction)))
 
 (define-method (get-outgoing-lanes (junction <road-junction>))
-  (filter (negate (cut is-sink? <> junction))
+  (filter (cut outgoing? <> junction)
           (get-lanes junction)))
 
 (define-class <road-segment> (<static>)
@@ -123,7 +123,7 @@
       (get segment 'stop-junction 'pos)))
 
 (define-method (get-midpoint (segment <road-segment>))
-  (vec2+ (get segment 'start-junction)
+  (vec2+ (get segment 'start-junction 'pos)
          (vec2* (get-v segment) 1/2)))
 
 (define-class <road-lane> (<static>)

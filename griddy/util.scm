@@ -31,7 +31,6 @@
          (new-container (append-to old-container val)))
     (slot-set! obj slot new-container)))
 
-
 (define (get obj . slots)
   ;; apparently `match' doesn't support tail patterns?
   ;; (match slots
