@@ -6,16 +6,18 @@
   #:use-module (griddy core)
   #:use-module (griddy util)
   #:use-module (griddy math)
+  #:duplicates (merge-generics)
   #:export (find-route
-            advance/route!))
+            advance/route!
+            next-step))
 
 (define *simulate/fps* 25)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
 
-(define-method (pop-step! (route <route>))
+;; TODO: why don't these work as methods?
+(define(pop-step! route)
   (slot-set! route 'steps (cdr (slot-ref route 'steps))))
-
-(define-method (next-step (route <route>))
+(define (next-step route)
   (if (null? (get route 'steps))
       (list)
       (car (get route 'steps))))
@@ -110,9 +112,9 @@
          (lanes
           (a* route-finder start-lane stop-lane neighbors cost distance))
          (lane->route-step
-          (cut cons 'turn-onto <>))
+          (cut list 'turn-onto <>))
          (pos-param->route-step
-          (cut cons 'arrive-at <>))
+          (cut list 'arrive-at <>))
          (steps
           (append (map lane->route-step (cdr lanes))
                   (list (pos-param->route-step (get dest 'pos-param))))))

@@ -8,6 +8,7 @@
   #:use-module (griddy util)
   #:use-module (griddy draw)
   #:use-module (griddy simulate route)
+  #:duplicates (merge-generics)
   #:export (simulate))
 
 
@@ -23,39 +24,43 @@
   (define-method (++ obj)
     obj)
 
+  (define-method (++ (list' <list>))
+    (map ++ list'))
+
   (define-method (++ (item <static>))
     (hash-table-ref static-items-table item))
 
+  (define-method (++ (location <location>))
+    (make <location>
+      #:road-lane (++ (get location 'road-lane))
+      #:pos-param (get location 'pos-param)))
+
   (define-method (++ (route <route>))
-    (define (copy-step step)
-      (map ++ step))
     (make <route>
-      #:steps (map copy-step (get route 'steps))))
+      #:steps (++ (get route 'steps))))
 
   (define-method (++ (actor <actor>))
     (define new-actor (make <actor>))
     (define (copy-slot-if-bound! slot)
       (if (slot-bound? actor slot)
-          (slot-set! new-actor
-                     slot
-                     (++ (slot-ref actor slot)))))
-    (copy-slot-if-bound! 'max-speed)
-    (copy-slot-if-bound! 'route)
+          (slot-set! new-actor slot (++ (slot-ref actor slot)))))
+    (for-each copy-slot-if-bound!
+              '(max-speed agenda route))
     new-actor)
+
   ++)
 
 (define (do-nothing actor ++)
-  (lambda ()
-    (link! (++ actor) (make <location>
-                        #:road-lane (++ (get actor 'location 'road-lane))
-                        #:pos-param (get actor 'location 'pos-param)))))
+  (link! (++ actor) (++ (get actor 'location))))
 
 (define-method (advance! (actor <actor>) (++ <generic>))
   (match (list (get actor 'agenda) (get actor 'route 'steps))
     ((() ())
      (do-nothing actor ++))
     (((('travel-to dest) _ ...) ())
-     (set-route! actor (find-route actor dest)))
+     (let ((actor++ (++ actor)))
+       (set-route! actor++ (++ (find-route actor dest)))
+       (link! actor++ (++ (get actor 'location)))))
     (((('travel-to dest) _ ...) (_ ..1))
      (advance/route! actor ++))))
 
