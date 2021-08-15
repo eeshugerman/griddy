@@ -58,7 +58,7 @@
 
          (actor-2 (make <actor>))
          (location-2
-          (make <location> #:road-lane lane-2 #:pos-param 0.75))
+          (make <location> #:road-lane lane-2 #:pos-param 0.5))
          (dest-2
           (make <location> #:road-lane lane-1 #:pos-param 0.75)))
 

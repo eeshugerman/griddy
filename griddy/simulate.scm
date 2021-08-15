@@ -8,7 +8,7 @@
   #:use-module (griddy util)
   #:use-module (griddy draw)
   #:use-module (griddy simulate route)
-  #:duplicates (merge-generics)
+  ;; #:duplicates (merge-generics)
   #:export (simulate))
 
 
@@ -18,6 +18,8 @@
      (zip-to-alist (get world 'static-items)
                    (get world++ 'static-items))
      eq?))
+
+  (define actors-table (make-hash-table eq?))
 
   (define-generic ++)
 
@@ -40,13 +42,18 @@
       #:steps (++ (get route 'steps))))
 
   (define-method (++ (actor <actor>))
-    (define new-actor (make <actor>))
-    (define (copy-slot-if-bound! slot)
-      (if (slot-bound? actor slot)
-          (slot-set! new-actor slot (++ (slot-ref actor slot)))))
-    (for-each copy-slot-if-bound!
-              '(max-speed agenda route))
-    new-actor)
+    (hash-table-ref
+     actors-table
+     actor
+     (lambda ()
+       (define new-actor (make <actor>))
+       (define (copy-slot-if-bound! slot)
+         (if (slot-bound? actor slot)
+             (slot-set! new-actor slot (++ (slot-ref actor slot)))))
+       (for-each copy-slot-if-bound!
+                 '(max-speed agenda route))
+       (hash-table-set! actors-table actor new-actor)
+       new-actor)))
 
   ++)
 
@@ -58,9 +65,8 @@
     ((() ())
      (do-nothing actor ++))
     (((('travel-to dest) _ ...) ())
-     (let ((actor++ (++ actor)))
-       (set-route! actor++ (++ (find-route actor dest)))
-       (link! actor++ (++ (get actor 'location)))))
+     (set-route! (++ actor) (++ (find-route actor dest)))
+     (do-nothing actor ++))
     (((('travel-to dest) _ ...) (_ ..1))
      (advance/route! actor ++))))
 
