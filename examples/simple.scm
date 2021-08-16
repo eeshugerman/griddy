@@ -17,22 +17,32 @@
   (define world (make <world>))
 
   (let* ((junction-1 (make <road-junction> #:x 250 #:y 250)) ;; center
-         (junction-2 (make <road-junction> #:x 300 #:y 400)) ;;
+         (junction-2 (make <road-junction> #:x 250 #:y 400)) ;; mid top
          (junction-3 (make <road-junction> #:x 400 #:y 250)) ;; mid right
 
          (segment-1 (make <road-segment>)) ;; vertical
-         (segment-2 (make <road-segment>)) ;; horizontal
+         (lane-1-1 (make <road-lane> #:direction 'forw))  ;; vertical, downward
 
-         (lane-1 (make <road-lane> #:direction 'forw))  ;; vertical, downward
-         (lane-2 (make <road-lane> #:direction 'back))  ;; horizontal, leftward
-         (lane-3 (make <road-lane> #:direction 'forw))) ;; horizontal, rightward
+         (segment-2 (make <road-segment>)) ;; horizontal
+         (lane-2-1 (make <road-lane> #:direction 'back))  ;; horizontal, leftward
+         (lane-2-2 (make <road-lane> #:direction 'forw)) ;; horizontal, rightward
+
+         (segment-3 (make <road-segment>)) ;; diagonal
+         (lane-3-1 (make <road-lane> #:direction 'back))
+         (lane-3-2 (make <road-lane> #:direction 'forw)))
+
 
     (link! junction-1 segment-1 junction-2)
     (link! junction-1 segment-2 junction-3)
+    (link! junction-2 segment-3 junction-3)
 
-    (link! lane-1 segment-1)
-    (link! lane-2 segment-2)
-    (link! lane-3 segment-2)
+    (link! lane-1-1 segment-1)
+
+    (link! lane-2-1 segment-2)
+    (link! lane-2-2 segment-2)
+
+    (link! lane-3-1 segment-3)
+    (link! lane-3-2 segment-3)
 
     (for-each (cut add! world <>)
               (list junction-1
@@ -40,33 +50,35 @@
                     junction-3
                     segment-1
                     segment-2
-                    lane-1
-                    lane-2
-                    lane-3)))
+                    segment-3
+                    lane-1-1
+                    lane-2-1
+                    lane-2-2
+                    lane-3-1
+                    lane-3-2)))
   world)
 
 (define (add-actors! world)
-  (let* ((lane-1 (third (get-road-lanes world)))
-         (lane-2 (second (get-road-lanes world)))
-         (lane-3 (first (get-road-lanes world)))
+  (let* ((lane-1-1 (fifth (get-road-lanes world)))
+         (lane-2-1 (fourth (get-road-lanes world)))
+         (lane-2-2 (third (get-road-lanes world)))
 
          (actor-1 (make <actor>))
          (location-1
-          (make <location> #:road-lane lane-3 #:pos-param 0.25))
+          (make <location> #:road-lane lane-2-2 #:pos-param 0.25))
          (dest-1
-          (make <location> #:road-lane lane-2 #:pos-param 0.75))
+          (make <location> #:road-lane lane-2-1 #:pos-param 0.75))
 
          (actor-2 (make <actor>))
          (location-2
-          (make <location> #:road-lane lane-2 #:pos-param 0.5))
+          (make <location> #:road-lane lane-2-1 #:pos-param 0.5))
          (dest-2
-          (make <location> #:road-lane lane-1 #:pos-param 0.75)))
+          (make <location> #:road-lane lane-1-1 #:pos-param 0.75)))
 
     (link! actor-1 location-1)
     (agenda-append! actor-1 `(travel-to ,dest-1))
 
     (link! actor-2 location-2)
-    (agenda-append! actor-2 `(travel-to ,dest-2))
-    ))
+    (agenda-append! actor-2 `(travel-to ,dest-2))))
 
 (simulate make-skeleton add-actors!)
