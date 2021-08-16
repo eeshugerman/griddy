@@ -1,6 +1,6 @@
 (define-module (griddy simulate)
   #:use-module (srfi srfi-26)
-  #:use-module (srfi srfi-69)
+  #:use-module (srfi srfi-69) ;; #:replace (make-hash-table)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (chickadee)
@@ -8,7 +8,7 @@
   #:use-module (griddy util)
   #:use-module (griddy draw)
   #:use-module (griddy simulate route)
-  ;; #:duplicates (merge-generics)
+  ;; #:duplicates (warn merge-generics)
   #:export (simulate))
 
 
@@ -57,18 +57,18 @@
 
   ++)
 
-(define (do-nothing actor ++)
+(define (do-nothing$ actor ++)
   (link! (++ actor) (++ (get actor 'location))))
 
-(define-method (advance! (actor <actor>) (++ <generic>))
+(define-method (advance$ (actor <actor>) (++ <generic>))
   (match (list (get actor 'agenda) (get actor 'route 'steps))
     ((() ())
-     (do-nothing actor ++))
+     (do-nothing$ actor ++))
     (((('travel-to dest) _ ...) ())
      (set-route! (++ actor) (++ (find-route actor dest)))
-     (do-nothing actor ++))
+     (do-nothing$ actor ++))
     (((('travel-to dest) _ ...) (_ ..1))
-     (advance/route! actor ++))))
+     (advance-on-route$ actor ++))))
 
 (define world #f)
 
@@ -82,7 +82,7 @@
            (++ (make-++ world world++)))
       (for-each
        ;; mutate `world++' via `++', inserting a new `actor++'
-       (cut advance! <> ++)
+       (cut advance$ <> ++)
        (get-actors world))
       (set! world world++)))
 

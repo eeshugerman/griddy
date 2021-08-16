@@ -8,79 +8,11 @@
   #:use-module (griddy math)
   #:duplicates (merge-generics)
   #:export (find-route
-            advance/route!
+            advance-on-route$
             next-step))
 
 (define *simulate/fps* 25)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
-
-;; TODO: why don't these work as methods?
-(define(pop-step! route)
-  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
-(define (next-step route)
-  (if (null? (get route 'steps))
-      (list)
-      (car (get route 'steps))))
-
-(define (get-pos-param-delta-max actor)
-  (* (match (get actor 'location 'road-lane 'direction)
-       ('forw +1)
-       ('back -1))
-     (get actor 'max-speed)
-     *simulate/time-step*
-     (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
-
-(define (route-step/arrive-at actor ++)
-  (lambda (pos-param-target)
-    (let* ((actor++ (++ actor))
-           (lane-current (get actor 'location 'road-lane))
-           (direction-current (get lane-current 'direction))
-           (pos-param-current (get actor 'location 'pos-param))
-           (pos-param-delta-max (get-pos-param-delta-max actor))
-           (done
-            (>= (abs pos-param-delta-max)
-                (abs (- pos-param-target pos-param-current))))
-           (pos-param-next
-            (if done
-                pos-param-target
-                (+ pos-param-current pos-param-delta-max))))
-      (when done
-        (pop-step! (get actor++ 'route))
-        (agenda-pop! actor++))
-      (link! actor++ (make <location>
-                       #:road-lane (++ lane-current)
-                       #:pos-param pos-param-next)))))
-
-(define (route-step/turn-onto actor ++)
-  (lambda (lane-next)
-    (let* ((actor++ (++ actor))
-           (lane-current (get actor 'location 'road-lane))
-           (direction-current (get lane-current 'direction))
-           (pos-param-current (get actor 'location 'pos-param))
-           (pos-param-delta-max (get-pos-param-delta-max actor))
-           (pos-param-next-naive
-            (+ pos-param-current pos-param-delta-max))
-           (direction-next
-            (get lane-next 'direction))
-           (done
-            (match (list direction-current pos-param-next-naive)
-              (('forw (? (cut >= <> 1))) #t)
-              (('back (? (cut <= <> 0))) #t)
-              (_ #f)))
-           (pos-param-next
-            (match (list done direction-current direction-next)
-              ((#f _ _) pos-param-next-naive)
-              ;; TODO: using `pos-param-next-naive' here assumes
-              ;;       (= (get-length lane-current) (get-length lane-next))
-              ((#t 'forw 'forw) (- pos-param-next-naive 1))
-              ((#t 'forw 'back) (- 1 (- pos-param-next-naive 1)))
-              ((#t 'back 'forw) (- pos-param-next-naive))
-              ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
-      (when done
-        (pop-step! (get actor++ 'route)))
-      (link! actor++ (make <location>
-                       #:road-lane (++ (if done lane-next lane-current))
-                       #:pos-param pos-param-next)))))
 
 (define (neighbors lane)
   (let ((junction (get lane
@@ -120,11 +52,78 @@
                   (list (pos-param->route-step (get dest 'pos-param))))))
     (make <route> #:steps steps)))
 
+;; TODO: why don't these work as methods?
+(define (pop-step! route)
+  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
+
+(define (next-step route)
+  (if (null? (get route 'steps))
+      (list)
+      (car (get route 'steps))))
+
+(define (get-pos-param-delta-max actor)
+  (* (match (get actor 'location 'road-lane 'direction)
+       ('forw +1)
+       ('back -1))
+     (get actor 'max-speed)
+     *simulate/time-step*
+     (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
+
+(define (route-step/arrive-at$ actor ++ pos-param-target)
+  (let* ((actor++ (++ actor))
+         (lane-current (get actor 'location 'road-lane))
+         (direction-current (get lane-current 'direction))
+         (pos-param-current (get actor 'location 'pos-param))
+         (pos-param-delta-max (get-pos-param-delta-max actor))
+         (done
+          (>= (abs pos-param-delta-max)
+              (abs (- pos-param-target pos-param-current))))
+         (pos-param-next
+          (if done
+              pos-param-target
+              (+ pos-param-current pos-param-delta-max))))
+    (when done
+      (pop-step! (get actor++ 'route))
+      (agenda-pop! actor++))
+    (link! actor++ (make <location>
+                     #:road-lane (++ lane-current)
+                     #:pos-param pos-param-next))))
+
+(define (route-step/turn-onto$ actor ++ lane-next)
+  (let* ((actor++ (++ actor))
+         (lane-current (get actor 'location 'road-lane))
+         (direction-current (get lane-current 'direction))
+         (pos-param-current (get actor 'location 'pos-param))
+         (pos-param-delta-max (get-pos-param-delta-max actor))
+         (pos-param-next-naive
+          (+ pos-param-current pos-param-delta-max))
+         (direction-next
+          (get lane-next 'direction))
+         (done
+          (match (list direction-current pos-param-next-naive)
+            (('forw (? (cut >= <> 1))) #t)
+            (('back (? (cut <= <> 0))) #t)
+            (_ #f)))
+         (pos-param-next
+          (match (list done direction-current direction-next)
+            ((#f _ _) pos-param-next-naive)
+            ;; TODO: using `pos-param-next-naive' here assumes
+            ;;       (= (get-length lane-current) (get-length lane-next))
+            ((#t 'forw 'forw) (- pos-param-next-naive 1))
+            ((#t 'forw 'back) (- 1 (- pos-param-next-naive 1)))
+            ((#t 'back 'forw) (- pos-param-next-naive))
+            ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
+    (when done
+      (pop-step! (get actor++ 'route)))
+    (link! actor++ (make <location>
+                     #:road-lane (++ (if done lane-next lane-current))
+                     #:pos-param pos-param-next))))
+
 ;; TODO: why doesn't this work with <actor>?
-(define-method (advance/route! (actor <object>) (++ <generic>))
+(define-method (advance-on-route$ (actor <object>) (++ <generic>))
   ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
   (match (next-step (get actor 'route))
     (('arrive-at pos-param)
-     ((route-step/arrive-at actor ++) pos-param))
+     (route-step/arrive-at$ actor ++ pos-param))
     (('turn-onto road-lane)
-     ((route-step/turn-onto actor ++) road-lane))))
+     (route-step/turn-onto$ actor ++ road-lane))))
