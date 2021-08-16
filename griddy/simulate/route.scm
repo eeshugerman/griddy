@@ -1,15 +1,22 @@
-(define-module (griddy simulate route)
-  #:use-module (srfi srfi-26)
-  #:use-module (ice-9 match)
-  #:use-module (oop goops)
-  #:use-module (chickadee math path-finding)
-  #:use-module (griddy core)
-  #:use-module (griddy util)
-  #:use-module (griddy math)
-  #:duplicates (merge-generics)
-  #:export (find-route
-            advance-on-route$
-            next-step))
+;; (define-module (griddy simulate route)
+;;   #:use-module (srfi srfi-26)
+;;   #:use-module (ice-9 match)
+;;   #:use-module (oop goops)
+;;   #:use-module (oop goops describe)
+;;   #:use-module (chickadee math path-finding)
+;;   #:use-module (griddy core)
+;;   #:use-module (griddy util)
+;;   #:use-module (griddy math)
+;;   #:duplicates (warn merge-generics)
+;;   #:export (find-route
+;;             advance-on-route$
+;;             next-step)
+;;   #:re-export (<actor> <location>))
+
+
+;; workaround for goops/module funkiness
+(use-modules (chickadee math path-finding)
+             (griddy math))
 
 (define *simulate/fps* 25)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
@@ -25,16 +32,15 @@
 
 (define (cost lane-1 lane-2)
   "actual cost of moving between neighboring nodes"
-  (get-length (get lane-1 'segment))) ;; TODO: not sure about this
+  ;; TODO: not sure about this
+  (get-length (get lane-1 'segment)))
 
 (define (distance lane-1 lane-2)
   "approximate cost of moving between nodes"
   (l2 (get-midpoint (get lane-1 'segment))
       (get-midpoint (get lane-2 'segment))))
 
-;; TODO: why doesn't this work as a method?
-;; (define-method (find-route (actor <actor>) (dest <location>))
-(define (find-route actor dest)
+(define-method (find-route (actor <actor>) (dest <location>))
   (let* ((route-finder
           (make-path-finder))  ;; TODO: safe to reuse this?
          (start-lane
@@ -52,11 +58,10 @@
                   (list (pos-param->route-step (get dest 'pos-param))))))
     (make <route> #:steps steps)))
 
-;; TODO: why don't these work as methods?
-(define (pop-step! route)
+(define-method (pop-step! (route <route>))
   (slot-set! route 'steps (cdr (slot-ref route 'steps))))
 
-(define (next-step route)
+(define-method (next-step (route <route>))
   (if (null? (get route 'steps))
       (list)
       (car (get route 'steps))))
@@ -119,8 +124,7 @@
                      #:road-lane (++ (if done lane-next lane-current))
                      #:pos-param pos-param-next))))
 
-;; TODO: why doesn't this work with <actor>?
-(define-method (advance-on-route$ (actor <object>) (++ <generic>))
+(define-method (advance-on-route$ (actor <actor>) (++ <generic>))
   ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
   (match (next-step (get actor 'route))
     (('arrive-at pos-param)

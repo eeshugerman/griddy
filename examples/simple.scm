@@ -14,23 +14,22 @@
             (griddy simulate)))
 
 (define (make-skeleton)
-  (define world (make <world>))
+  (let* ((world (make <world>))
 
-  (let* ((junction-1 (make <road-junction> #:x 250 #:y 250)) ;; center
+         (junction-1 (make <road-junction> #:x 250 #:y 250)) ;; center
          (junction-2 (make <road-junction> #:x 250 #:y 400)) ;; mid top
          (junction-3 (make <road-junction> #:x 400 #:y 250)) ;; mid right
 
          (segment-1 (make <road-segment>)) ;; vertical
-         (lane-1-1 (make <road-lane> #:direction 'forw))  ;; vertical, downward
+         (lane-1-1 (make <road-lane> #:direction 'forw)) ;; downward
 
          (segment-2 (make <road-segment>)) ;; horizontal
-         (lane-2-1 (make <road-lane> #:direction 'back))  ;; horizontal, leftward
-         (lane-2-2 (make <road-lane> #:direction 'forw)) ;; horizontal, rightward
+         (lane-2-1 (make <road-lane> #:direction 'back)) ;; leftward
+         (lane-2-2 (make <road-lane> #:direction 'forw)) ;; rightward
 
          (segment-3 (make <road-segment>)) ;; diagonal
          (lane-3-1 (make <road-lane> #:direction 'back))
          (lane-3-2 (make <road-lane> #:direction 'forw)))
-
 
     (link! junction-1 segment-1 junction-2)
     (link! junction-1 segment-2 junction-3)
@@ -55,8 +54,8 @@
                     lane-2-1
                     lane-2-2
                     lane-3-1
-                    lane-3-2)))
-  world)
+                    lane-3-2))
+    world))
 
 (define (add-actors! world)
   (let* ((lane-1-1 (fifth (get-road-lanes world)))

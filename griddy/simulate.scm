@@ -3,13 +3,16 @@
   #:use-module (srfi srfi-69) ;; #:replace (make-hash-table)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
+  #:use-module (oop goops describe)
   #:use-module (chickadee)
   #:use-module (griddy core)
   #:use-module (griddy util)
   #:use-module (griddy draw)
-  #:use-module (griddy simulate route)
-  ;; #:duplicates (warn merge-generics)
+  ;; #:use-module (griddy simulate route)
   #:export (simulate))
+
+;; workaround for goops/module funkiness
+(include "simulate/route.scm")
 
 
 (define (make-++ world world++)
@@ -19,7 +22,7 @@
                    (get world++ 'static-items))
      eq?))
 
-  (define actors-table (make-hash-table eq?))
+  (define actors-table ((@ (srfi srfi-69) make-hash-table) eq?))
 
   (define-generic ++)
 
@@ -81,7 +84,7 @@
     (let* ((world++ (make-skeleton))
            (++ (make-++ world world++)))
       (for-each
-       ;; mutate `world++' via `++', inserting a new `actor++'
+       ;; mutate `world++' via `++', inserting a new actor
        (cut advance$ <> ++)
        (get-actors world))
       (set! world world++)))
