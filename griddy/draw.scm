@@ -84,7 +84,7 @@
 
 (define (draw-actor actor)
   (with-canvas (with-style ((fill-color *draw/actor/color*))
-                 (fill (circle (get-pos actor) 10.0)))))
+                 (fill (circle (get-pos actor) *draw/actor/size*)))))
 
 (define (draw-world world)
   (for-each draw-road-segment (get-road-segments world))
