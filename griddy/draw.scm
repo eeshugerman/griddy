@@ -21,7 +21,7 @@
 (define *draw/road-lane/arrow-size* 5)
 (define *draw/road-lane/color* tango-plum)
 (define *draw/actor/size* 10)
-(define *draw/actor/color* tango-sky-blue)
+(define *draw/actor/color* tango-light-chameleon)
 
 (define with-canvas (compose draw-canvas make-canvas))
 

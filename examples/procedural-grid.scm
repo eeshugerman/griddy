@@ -4,6 +4,7 @@
              (ice-9 match)
              (srfi srfi-1)
              (srfi srfi-26)
+             (srfi srfi-27)
              (griddy core)
              (griddy util)
              (griddy simulate))
@@ -52,6 +53,23 @@
     world))
 
 (define (add-actors! world)
-  #t)
+  (random-source-randomize! default-random-source)
+  (let* ((actors
+          (list-tabulate 10 (lambda (_) (make <actor>))))
+         (lanes
+          (get-road-lanes world))
+         (num-lanes
+          (length lanes))
+         (random-lane
+          (lambda () (list-ref lanes (random-integer num-lanes))))
+         (random-location
+          (lambda () (make <location>
+                       #:road-lane (random-lane)
+                       #:pos-param (random-real)))))
+    (for-each
+     (lambda (actor)
+       (link! actor (random-location))
+       (agenda-append! actor `(travel-to ,(random-location))))
+     actors)))
 
 (simulate make-skeleton add-actors! #:width 550 #:height 550)
