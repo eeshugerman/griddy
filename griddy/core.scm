@@ -145,10 +145,11 @@
   (let* ((segment (get lane 'segment))
          (lane-count-from-edge
           (match (get lane 'direction)
-            ('forw (- (get-lane-count segment 'forw)
+            ;; swap back/forw for uk-style
+            ('back (- (get-lane-count segment 'back)
                       (get lane 'rank)
                       1))
-            ('back (+ (get-lane-count segment 'forw)
+            ('forw (+ (get-lane-count segment 'back)
                       (get lane 'rank)))))
          (v-ortho
           (get-v-ortho segment))
