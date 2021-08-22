@@ -15,9 +15,8 @@
 
 ;; TODO: Possible to use GOOPS?
 
-(define *draw/road-junction/size* 25)
+(define *draw/road-junction/size* 40)
 (define *draw/road-junction/color* tango-aluminium-6)
-(define *draw/road-segment/width* 40)
 (define *draw/road-segment/color* tango-aluminium-5)
 (define *draw/road-lane/arrow-size* 5)
 (define *draw/road-lane/color* tango-plum)
@@ -25,12 +24,6 @@
 (define *draw/actor/color* tango-sky-blue)
 
 (define with-canvas (compose draw-canvas make-canvas))
-
-(define (draw-road-junction junction)
-  (with-canvas
-   (with-style ((fill-color *draw/road-junction/color*))
-     (fill (circle (get junction 'pos)
-                   *draw/road-junction/size*)))))
 
 (define (angle-of vec)
   (atan (vec2-y vec) (vec2-x vec)))
@@ -43,6 +36,16 @@
     (cut rotate angle <>)
     (cut translate place <>))
    painter))
+
+(define (draw-road-junction junction)
+  (with-canvas
+   (with-style ((fill-color *draw/road-junction/color*))
+     (rotate-in-place pi/4
+                      (get junction 'pos)
+                      (fill (regular-polygon (get junction 'pos)
+                                             4
+                                             *draw/road-junction/size*))))))
+
 
 (define (draw-road-segment segment)
   (let* ((v-start (get segment 'start-junction 'pos))

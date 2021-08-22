@@ -75,7 +75,7 @@
 
 (define world #f)
 
-(define (simulate make-skeleton add-actors!)
+(define* (simulate make-skeleton add-actors! #:key (width 500) (height 500))
   (define (load)
     (set! world (make-skeleton))
     (add-actors! world))
@@ -93,5 +93,5 @@
    #:load load
    #:update update
    #:draw (lambda (alpha) (draw-world world))
-   #:window-width 500
-   #:window-height 500))
+   #:window-width width
+   #:window-height height))
