@@ -35,10 +35,16 @@
   (define-method (++ (item <static>))
     (hash-table-ref static-items-table item))
 
-  (define-method (++ (location <location>))
-    (make <location>
-      #:road-lane (++ (get location 'road-lane))
-      #:pos-param (get location 'pos-param)))
+  (define-method (++ (location <location-on-road>))
+    (make <location-on-road>
+      #:pos-param (get location 'pos-param)
+      #:road-lane (++ (get location 'road-lane))))
+
+  (define-method (++ (location <location-off-road>))
+    (make <location-off-road>
+      #:pos-param (get location 'pos-param)
+      #:road-segment (get location 'road-lane 'road-segment)
+      #:road-side-direction (get location 'direction)))
 
   (define-method (++ (route <route>))
     (make <route>

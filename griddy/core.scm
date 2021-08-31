@@ -10,6 +10,8 @@
   #:duplicates (warn merge-generics)
   #:export (<actor>
             <location>
+            <location-on-road>
+            <location-off-road>
             <point-like>
             <road-junction>
             <road-lane>
@@ -168,16 +170,31 @@
     v-lane-center))
 
 (define-class <location> ()
-  (road-lane
-   #:init-keyword #:road-lane)
   (pos-param ;; 0..1
    #:init-value 0.0
    #:init-keyword #:pos-param))
 
+(define-class <location-on-road> (<location>)
+  (road-lane
+   #:init-keyword #:road-lane))
+
+(define-class <location-off-road> (<location>)
+  (road-segment
+   #:init-keyword #:road-segment)
+  (road-side-direction
+   #:init-keyword #:road-side-direction))
+
 (define-method (get-pos (loc <location>))
   (let* ((v-start (get loc 'road-lane 'segment 'start-junction 'pos))
          (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
-         (v-segment (vec2- v-stop v-start)))
+         (v-segment (vec2- v-stop v-start))
+         (v-offset (case (class-of loc)
+                    ((<location-on-road>)
+                     (get-offset (get loc 'road-lane))
+                     (<location-off-road>)
+                     (* 1/2
+                        (get-width (get loc 'road-lane 'road-segment))
+                        (+ 1 (/ (core/road-segment/wiggle-room-%* 100))))))))
     (vec2+/many v-start
                 (vec2* v-segment (get loc 'pos-param))
                 (get-offset (get loc 'road-lane)))))

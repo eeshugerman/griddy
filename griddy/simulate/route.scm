@@ -11,7 +11,10 @@
 ;;   #:export (find-route
 ;;             advance-on-route$
 ;;             next-step)
-;;   #:re-export (<actor> <location>))
+;;   #:re-export (<actor>
+;;                <location>
+;;                <location-on-road>
+;;                <location-off-road>))
 
 
 ;; workaround for goops/module funkiness
@@ -40,7 +43,7 @@
   (l2 (get-midpoint (get lane-1 'segment))
       (get-midpoint (get lane-2 'segment))))
 
-(define-method (find-route (actor <actor>) (dest <location>))
+(define-method (find-route (actor <actor>) (dest <location-on-road>))
   (let* ((route-finder
           (make-path-finder))  ;; TODO: safe to reuse this?
          (start-lane
@@ -90,9 +93,10 @@
     (when done
       (pop-step! (get actor++ 'route))
       (agenda-pop! actor++))
-    (link! actor++ (make <location>
-                     #:road-lane (++ lane-current)
-                     #:pos-param pos-param-next))))
+    (link! actor++ (make <location-off-road>
+                     #:pos-param pos-param-next
+                     #:road-segment (get lane-current 'road-segment)
+                     #:road-side-direction (get lane-current 'direction)))))
 
 (define (route-step/turn-onto$ actor ++ lane-next)
   (let* ((actor++ (++ actor))
@@ -120,7 +124,7 @@
             ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
     (when done
       (pop-step! (get actor++ 'route)))
-    (link! actor++ (make <location>
+    (link! actor++ (make <location-on-road>
                      #:road-lane (++ (if done lane-next lane-current))
                      #:pos-param pos-param-next))))
 
