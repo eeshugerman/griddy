@@ -84,11 +84,20 @@
     (link! actor++ location++)))
 
 (define-method (advance$ (actor <actor>) (++ <generic>))
-  (match (list (get actor 'agenda) (get actor 'route))
-    ((()                        'none)    (do-nothing$ actor ++))
-    (((('travel-to dest) _ ...) 'none)    (begin-route$ actor ++))
-    (((('travel-to dest) _ ...) (_ ..1))  (advance-on-route$ actor ++))
-    (((('travel-to-dest) _ ...) ())       (end-route$ actor ++))))
+  (let ((agenda-status (match (get actor 'agenda)
+                         (()                     'nothin)
+                         ((('travel-to _) _ ...) 'travelling)))
+
+        (route-status  (match (get actor 'route)
+                         ('none   'none)
+                         ((_ ..1) 'some)
+                         (()      'done))))
+
+    (match `(,agenda-status ,route-status)
+      (('nothin     'none) (do-nothing$ actor ++))
+      (('travelling 'none) (begin-route$ actor ++))
+      (('travelling 'some) (advance-on-route$ actor ++))
+      (('travelling 'done) (end-route$ actor ++)))))
 
 (define world #f)
 

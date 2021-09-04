@@ -220,6 +220,7 @@
    #:init-keyword #:max-speed
    #:init-value 25) ;; units / second
   (route ;; 'none or list
+         ;; '() means end of route
    #:init-form 'none
    #:setter set-route!)
   (agenda
