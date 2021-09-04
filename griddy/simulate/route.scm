@@ -44,9 +44,9 @@
       (get-midpoint (get lane-2 'segment))))
 
 ;; assumes all road have unbroken medians
-(define-method (find-route (actor <actor>) (dest <location-on-road>))
+(define-method (find-route (init <location-on-road>) (dest <location-on-road>))
   (let* ((route-finder          (make-path-finder))
-         (start-lane            (get actor 'location 'road-lane))
+         (start-lane            (get init 'road-lane))
          (stop-lane             (get dest 'road-lane))
          (lanes                 (a* route-finder
                                     start-lane

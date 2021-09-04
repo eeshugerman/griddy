@@ -56,15 +56,14 @@
   (random-source-randomize! default-random-source)
   (let* ((actors
           (list-tabulate 10 (lambda (_) (make <actor>))))
-         (lanes
-          (get-road-lanes world))
-         (num-lanes
-          (length lanes))
-         (random-lane
-          (lambda () (list-ref lanes (random-integer num-lanes))))
+         (segments
+          (get-road-segments world))
+         (random-side
+          (lambda () (if (even? (random-integer)) 'forw 'back)))
          (random-location
-          (lambda () (make <location>
-                       #:road-lane (random-lane)
+          (lambda () (make <location-off-road>
+                       #:road-segment (random-segment)
+                       #:road-side-direction (random-side)
                        #:pos-param (random-real)))))
     (for-each
      (lambda (actor)
