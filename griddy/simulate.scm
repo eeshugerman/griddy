@@ -66,27 +66,27 @@
 
   ++)
 
-(define (do-nothing$ actor ++)
+(define-method (do-nothing$ (++ <generic>) (actor <actor>))
   (link! (++ actor)
          (++ (get actor 'location))))
 
-(define (begin-route$ actor ++)
+(define-method (begin-route$ (++ <generic>) (actor <actor>))) (dest <location>))
   (let* ((actor++    (++ actor))
          (location++ (off-road->on-road (get actor++ 'location))))
     (link! actor++ location++)
     (set-route! actor++ (find-route actor++ dest))))
 
-(define (end-route$ actor ++)
+(define-method (end-route$ (++ <generic>) (actor <actor>))
   (let* ((actor++    (++ actor))
          (location++ (on-road->off-road (get actor++ 'location))))
+    (link! actor++ location++)
     (set-route! actor++ 'none)
-    (agenda-pop! actor++)
-    (link! actor++ location++)))
+    (agenda-pop! actor++)))
 
-(define-method (advance$ (actor <actor>) (++ <generic>))
+(define-method (advance$ (++ <generic>) (actor <actor>))
   (let ((agenda-status (match (get actor 'agenda)
-                         (()                     'nothin)
-                         ((('travel-to _) _ ...) 'travelling)))
+                         (() 'nothin)
+                         ((agenda-step ..1) agenda-step)))
 
         (route-status  (match (get actor 'route)
                          ('none   'none)
@@ -94,10 +94,10 @@
                          (()      'done))))
 
     (match `(,agenda-status ,route-status)
-      (('nothin     'none) (do-nothing$ actor ++))
-      (('travelling 'none) (begin-route$ actor ++))
-      (('travelling 'some) (advance-on-route$ actor ++))
-      (('travelling 'done) (end-route$ actor ++)))))
+      (('nothin           'none) (do-nothing$       ++ actor))
+      ((('travel-to dest) 'none) (begin-route$      ++ actor dest))
+      ((('travel-to dest) 'some) (advance-on-route$ ++ actor))
+      ((('travel-to dest) 'done) (end-route$        ++ actor)))))
 
 (define world #f)
 
@@ -111,7 +111,7 @@
            (++ (make-++ world world++)))
       (for-each
        ;; mutate `world++' via `++', inserting a new actor
-       (cut advance$ <> ++)
+       (cut advance$ ++ <>)
        (get-actors world))
       (set! world world++)))
 

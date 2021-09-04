@@ -67,7 +67,7 @@
      *simulate/time-step*
      (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
 
-(define (route-step/arrive-at$ actor ++ pos-param-target)
+(define (route-step/arrive-at$ ++ actor pos-param-target)
   (let* ((actor++             (++ actor))
          (lane-current        (get actor 'location 'road-lane))
          (direction-current   (get lane-current 'direction))
@@ -86,7 +86,7 @@
                      #:pos-param pos-param-next
                      #:road-lane lane-current))))
 
-(define (route-step/turn-onto$ actor ++ lane-next)
+(define (route-step/turn-onto$ ++ actor lane-next)
   (let* ((actor++              (++ actor))
          (lane-current         (get actor 'location 'road-lane))
          (direction-current    (get lane-current 'direction))
@@ -114,7 +114,7 @@
                      #:road-lane (++ (if done lane-next lane-current))
                      #:pos-param pos-param-next))))
 
-(define-method (advance-on-route$ (actor <actor>) (++ <generic>))
+(define-method (advance-on-route$ (++ <generic>) (actor <actor>))
   ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
   (match (car (get actor 'route))
     (('arrive-at pos-param) (route-step/arrive-at$ actor ++ pos-param))
