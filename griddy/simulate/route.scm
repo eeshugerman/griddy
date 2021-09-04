@@ -45,17 +45,17 @@
 
 ;; assumes all road have unbroken medians
 (define-method (find-route (actor <actor>) (dest <location-on-road>))
-  (let* ((route-finder (make-path-finder))
-         (start-lane
-          (get actor 'location 'road-lane))
-         (stop-lane
-          (get dest 'road-lane))
-         (lanes
-          (a* route-finder start-lane stop-lane neighbors cost distance))
-         (lane->route-step
-          (cut list 'turn-onto <>))
-         (pos-param->route-step
-          (cut list 'arrive-at <>))))
+  (let* ((route-finder          (make-path-finder))
+         (start-lane            (get actor 'location 'road-lane))
+         (stop-lane             (get dest 'road-lane))
+         (lanes                 (a* route-finder
+                                    start-lane
+                                    stop-lane
+                                    neighbors
+                                    cost
+                                    distance))
+         (lane->route-step      (cut list 'turn-onto <>))
+         (pos-param->route-step (cut list 'arrive-at <>))))
   (append-1 (map lane->route-step (cdr lanes))
             (pos-param->route-step (get dest 'pos-param))))
 
@@ -68,10 +68,10 @@
      (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
 
 (define (route-step/arrive-at$ actor ++ pos-param-target)
-  (let* ((actor++ (++ actor))
-         (lane-current (get actor 'location 'road-lane))
-         (direction-current (get lane-current 'direction))
-         (pos-param-current (get actor 'location 'pos-param))
+  (let* ((actor++             (++ actor))
+         (lane-current        (get actor 'location 'road-lane))
+         (direction-current   (get lane-current 'direction))
+         (pos-param-current   (get actor 'location 'pos-param))
          (pos-param-delta-max (get-pos-param-delta-max actor))
          (done
           (>= (abs pos-param-delta-max)
@@ -87,15 +87,13 @@
                      #:road-lane lane-current))))
 
 (define (route-step/turn-onto$ actor ++ lane-next)
-  (let* ((actor++ (++ actor))
-         (lane-current (get actor 'location 'road-lane))
-         (direction-current (get lane-current 'direction))
-         (pos-param-current (get actor 'location 'pos-param))
-         (pos-param-delta-max (get-pos-param-delta-max actor))
-         (pos-param-next-naive
-          (+ pos-param-current pos-param-delta-max))
-         (direction-next
-          (get lane-next 'direction))
+  (let* ((actor++              (++ actor))
+         (lane-current         (get actor 'location 'road-lane))
+         (direction-current    (get lane-current 'direction))
+         (pos-param-current    (get actor 'location 'pos-param))
+         (pos-param-delta-max  (get-pos-param-delta-max actor))
+         (pos-param-next-naive (+ pos-param-current pos-param-delta-max))
+         (direction-next       (get lane-next 'direction))
          (done
           (match (list direction-current pos-param-next-naive)
             (('forw (? (cut >= <> 1))) #t)
@@ -119,7 +117,5 @@
 (define-method (advance-on-route$ (actor <actor>) (++ <generic>))
   ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
   (match (car (get actor 'route))
-    (('arrive-at pos-param)
-     (route-step/arrive-at$ actor ++ pos-param))
-    (('turn-onto road-lane)
-     (route-step/turn-onto$ actor ++ road-lane))))
+    (('arrive-at pos-param) (route-step/arrive-at$ actor ++ pos-param))
+    (('turn-onto road-lane) (route-step/turn-onto$ actor ++ road-lane))))

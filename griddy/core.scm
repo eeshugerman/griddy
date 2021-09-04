@@ -153,20 +153,20 @@
                       1))
             ('forw (+ (get-lane-count segment 'back)
                       (get lane 'rank)))))
-         (v-ortho
-          (get-v-ortho segment))
-         (v-segment-edge
-          (vec2* v-ortho (* *core/road-lane/width*
-                            (get-lane-count segment)
-                            -1/2)))
-         (v-lane-edge
-          (vec2+ v-segment-edge
-                 (vec2* v-ortho (* *core/road-lane/width*
-                                   lane-count-from-edge))))
-         (v-lane-center
-          (vec2+ v-lane-edge
-                 (vec2* v-ortho (* *core/road-lane/width*
-                                   1/2)))))
+
+         (v-ortho         (get-v-ortho segment))
+
+         (v-segment-edge  (vec2* v-ortho
+                                 (* *core/road-lane/width*
+                                    (get-lane-count segment)
+                                    -1/2)))
+         (v-lane-edge     (vec2+ v-segment-edge
+                                 (vec2* v-ortho
+                                        (* *core/road-lane/width*
+                                           lane-count-from-edge))))
+         (v-lane-center   (vec2+ v-lane-edge
+                                 (vec2* v-ortho (* *core/road-lane/width*
+                                                   1/2)))))
     v-lane-center))
 
 (define-class <location> ()
@@ -190,16 +190,16 @@
               v-offset))
 
 (define-method (get-pos (loc <location-off-road>))
-  (let ((v-start (get loc 'road-segment 'start-junction 'pos))
-        (v-stop (get loc 'road-segment 'stop-junction 'pos))
+  (let ((v-start  (get loc 'road-segment 'start-junction 'pos))
+        (v-stop   (get loc 'road-segment 'stop-junction  'pos))
         (v-offset (* 1/2
                      (get-width (get loc 'road-lane 'road-segment))
                      (+ 1 (/ (core/road-segment/wiggle-room-%* 100))))))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 
 (define-method (get-pos (loc <location-on-road>))
-  (let ((v-start (get loc 'road-lane 'segment 'start-junction 'pos))
-        (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
+  (let ((v-start  (get loc 'road-lane 'segment 'start-junction 'pos))
+        (v-stop   (get loc 'road-lane 'segment 'stop-junction  'pos))
         (v-offset (get-offset (get loc 'road-lane))))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 

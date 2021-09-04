@@ -71,13 +71,13 @@
          (++ (get actor 'location))))
 
 (define (begin-route$ actor ++)
-  (let* ((actor++ (++ actor))
+  (let* ((actor++    (++ actor))
          (location++ (off-road->on-road (get actor++ 'location))))
     (link! actor++ location++)
     (set-route! actor++ (find-route actor++ dest))))
 
 (define (end-route$ actor ++)
-  (let* ((actor++ (++ actor))
+  (let* ((actor++    (++ actor))
          (location++ (on-road->off-road (get actor++ 'location))))
     (set-route! actor++ 'none)
     (agenda-pop! actor++)
@@ -85,14 +85,10 @@
 
 (define-method (advance$ (actor <actor>) (++ <generic>))
   (match (list (get actor 'agenda) (get actor 'route))
-    ((() 'none)
-     (do-nothing$ actor ++))
-    (((('travel-to dest) _ ...) 'none)
-     (begin-route$ actor ++))
-    (((('travel-to dest) _ ...) (_ ..1))
-     (advance-on-route$ actor ++))
-    (((('travel-to-dest) _ ...) ())
-     (end-route$ actor ++))))
+    ((()                        'none)    (do-nothing$ actor ++))
+    (((('travel-to dest) _ ...) 'none)    (begin-route$ actor ++))
+    (((('travel-to dest) _ ...) (_ ..1))  (advance-on-route$ actor ++))
+    (((('travel-to-dest) _ ...) ())       (end-route$ actor ++))))
 
 (define world #f)
 
