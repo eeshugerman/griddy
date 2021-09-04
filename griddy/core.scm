@@ -184,37 +184,46 @@
   (road-side-direction
    #:init-keyword #:road-side-direction))
 
-(define-method (get-pos (loc <location>))
-  (let* ((v-start (get loc 'road-lane 'segment 'start-junction 'pos))
-         (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
-         (v-segment (vec2- v-stop v-start))
-         (v-offset (case (class-of loc)
-                    ((<location-on-road>)
-                     (get-offset (get loc 'road-lane))
-                     (<location-off-road>)
-                     (* 1/2
-                        (get-width (get loc 'road-lane 'road-segment))
-                        (+ 1 (/ (core/road-segment/wiggle-room-%* 100))))))))
-    (vec2+/many v-start
-                (vec2* v-segment (get loc 'pos-param))
-                (get-offset (get loc 'road-lane)))))
+(define (get-pos-helper v-start v-stop v-offset pos-param)
+  (vec2+/many v-start
+              (vec2* (vec2- v-stop v-start) pos-param)
+              v-offset))
 
-(define-class <route> ()
-  (steps
-   #:init-thunk list
-   #:init-keyword #:steps))
+(define-method (get-pos (loc <location-off-road>))
+  (let ((v-start (get loc 'road-segment 'start-junction 'pos))
+        (v-stop (get loc 'road-segment 'stop-junction 'pos))
+        (v-offset (* 1/2
+                     (get-width (get loc 'road-lane 'road-segment))
+                     (+ 1 (/ (core/road-segment/wiggle-room-%* 100))))))
+    (get-pos-helper v-start v-stop v-offset pos-param)))
+
+(define-method (get-pos (loc <location-on-road>))
+  (let ((v-start (get loc 'road-lane 'segment 'start-junction 'pos))
+        (v-stop (get loc 'road-lane 'segment 'stop-junction 'pos))
+        (v-offset (get-offset (get loc 'road-lane))))
+    (get-pos-helper v-start v-stop v-offset pos-param)))
+
+(define-method (on-road->off-road (loc <location-on-road>))
+  (make <location-off-road>
+    #:pos-param (get loc 'pos-param)
+    #:road-segment (get loc 'road-lane 'road-segment)
+    #:road-side-direction (get loc 'road-lane 'direction)))
+
+(define-method off-road->on-road (loc <location-off-road>)
+  (make <location-on-road>
+    #:pos-param (get loc 'pos-param)
+    #:road-lane TODO)) ;; outermost lane on 'road-side-direction
 
 (define-class <actor> ()
   location
   (max-speed
    #:init-keyword #:max-speed
    #:init-value 25) ;; units / second
-  (route
-   #:init-form (make <route>)
+  (route ;; 'none or list
+   #:init-form 'none
    #:setter set-route!)
   (agenda
-   #:init-thunk list
-   #:setter set-agenda!))
+   #:init-thunk list))
 
 (define-method (get-pos (actor <actor>))
   (get-pos (get actor 'location)))
@@ -226,6 +235,9 @@
   (let ((current-agenda (get actor 'agenda)))
     (slot-set! actor 'agenda (cdr current-agenda))
     (car current-agenda)))
+
+(define-method (route-pop! (actor <actor>))
+  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
 
 (define-class <world> ()
   (static-items ;; roads, etc

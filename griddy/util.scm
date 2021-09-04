@@ -1,25 +1,22 @@
 (define-module (griddy util)
   #:use-module (srfi srfi-1)
   #:use-module (oop goops)
-  #:use-module (pfds bbtrees)
   #:use-module (ice-9 match)
   #:export (get
+            append-1
             slot-add!
             slot-append!
             zip-to-alist))
 
 
-;; is this the best option?
-(define <bbtree> (class-of (make-bbtree <)))
+(define append-1 (l item)
+  (append l (list item)))
 
 (define-method (add-to (container <list>) val)
   (cons val container))
 
-(define-method (add-to (container <bbtree>) pair)
-  (bbtree-set container (car pair) (cdr pair)))
-
 (define-method (append-to (container <list>) val)
-  (append container (list val)))
+  (append-1 container val))
 
 (define (slot-add! obj slot val)
   (let* ((old-container (slot-ref obj slot))

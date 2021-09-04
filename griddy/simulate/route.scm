@@ -43,9 +43,9 @@
   (l2 (get-midpoint (get lane-1 'segment))
       (get-midpoint (get lane-2 'segment))))
 
+;; assumes all road have unbroken medians
 (define-method (find-route (actor <actor>) (dest <location-on-road>))
-  (let* ((route-finder
-          (make-path-finder))  ;; TODO: safe to reuse this?
+  (let* ((route-finder (make-path-finder))
          (start-lane
           (get actor 'location 'road-lane))
          (stop-lane
@@ -55,19 +55,9 @@
          (lane->route-step
           (cut list 'turn-onto <>))
          (pos-param->route-step
-          (cut list 'arrive-at <>))
-         (steps
-          (append (map lane->route-step (cdr lanes))
-                  (list (pos-param->route-step (get dest 'pos-param))))))
-    (make <route> #:steps steps)))
-
-(define-method (pop-step! (route <route>))
-  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
-
-(define-method (next-step (route <route>))
-  (if (null? (get route 'steps))
-      (list)
-      (car (get route 'steps))))
+          (cut list 'arrive-at <>))))
+  (append-1 (map lane->route-step (cdr lanes))
+            (pos-param->route-step (get dest 'pos-param))))
 
 (define (get-pos-param-delta-max actor)
   (* (match (get actor 'location 'road-lane 'direction)
@@ -91,12 +81,10 @@
               pos-param-target
               (+ pos-param-current pos-param-delta-max))))
     (when done
-      (pop-step! (get actor++ 'route))
-      (agenda-pop! actor++))
-    (link! actor++ (make <location-off-road>
+      (route-pop! actor ++))
+    (link! actor++ (make <location-on-road>
                      #:pos-param pos-param-next
-                     #:road-segment (get lane-current 'road-segment)
-                     #:road-side-direction (get lane-current 'direction)))))
+                     #:road-lane lane-current))))
 
 (define (route-step/turn-onto$ actor ++ lane-next)
   (let* ((actor++ (++ actor))
@@ -123,14 +111,14 @@
             ((#t 'back 'forw) (- pos-param-next-naive))
             ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
     (when done
-      (pop-step! (get actor++ 'route)))
+      (route-pop! actor++))
     (link! actor++ (make <location-on-road>
                      #:road-lane (++ (if done lane-next lane-current))
                      #:pos-param pos-param-next))))
 
 (define-method (advance-on-route$ (actor <actor>) (++ <generic>))
   ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
-  (match (next-step (get actor 'route))
+  (match (car (get actor 'route))
     (('arrive-at pos-param)
      (route-step/arrive-at$ actor ++ pos-param))
     (('turn-onto road-lane)
