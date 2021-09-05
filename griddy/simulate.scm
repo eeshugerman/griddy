@@ -56,7 +56,7 @@
          (if (slot-bound? actor slot)
              (slot-set! new-actor slot (++ (slot-ref actor slot)))))
        (for-each copy-slot-if-bound!
-                 '(max-speed agenda route location))
+                 '(max-speed agenda route))
        (hash-table-set! actors-table actor new-actor)
        new-actor)))
 
@@ -72,21 +72,18 @@
     (set-car! (get (++ actor) 'agenda) `(sleep-for ,(- time 1))))
   (do-nothing$ ++ actor))
 
-(define-method (begin-route$
-                (++ <generic>) (actor <actor>) (dest <location-off-road>))
-  (let* ((actor++ (++ actor))
-         (init-loc++ (off-road->on-road (get actor++ 'location)))
-         (dest-loc++ (off-road->on-road (++ dest)))
-         (route++    (find-route init-loc++ dest-loc++)))
-    (set-route! actor++ route++)
-    (link! actor++ init-loc++)))
+(define-method (begin-route$ (++ <generic>) (actor <actor>) (dest <location-off-road>))
+  (let* ((init-loc (off-road->on-road (get actor 'location)))
+         (dest-loc (off-road->on-road dest))
+         (route    (find-route init-loc dest-loc)))
+    (set-route! (++ actor) (++ route))
+    (link! (++ actor) (++ init-loc))))
 
 (define-method (end-route$ (++ <generic>) (actor <actor>))
-  (let* ((actor++    (++ actor))
-         (location++ (on-road->off-road (get actor++ 'location))))
-    (set-route! actor++ 'none)
-    (agenda-pop! actor++)
-    (link! actor++ location++)))
+  (set-route! (++ actor) 'none)
+  (agenda-pop! (++ actor))
+  (link! (++ actor)
+         (++ (on-road->off-road (get actor 'location)))))
 
 (define-method (advance$ (++ <generic>) (actor <actor>))
   (let ((agenda-status
