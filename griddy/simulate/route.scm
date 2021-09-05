@@ -55,9 +55,10 @@
                                     cost
                                     distance))
          (lane->route-step      (cut list 'turn-onto <>))
-         (pos-param->route-step (cut list 'arrive-at <>))))
-  (append-1 (map lane->route-step (cdr lanes))
-            (pos-param->route-step (get dest 'pos-param))))
+         (pos-param->route-step (cut list 'arrive-at <>)))
+
+    (append-1 (map lane->route-step (cdr lanes))
+              (pos-param->route-step (get dest 'pos-param)))))
 
 (define (get-pos-param-delta-max actor)
   (* (match (get actor 'location 'road-lane 'direction)

@@ -1,4 +1,4 @@
-;;; GUILE_LOAD_PATH="$(pwd)" guile examples/procedural.scm
+;;; GUILE_LOAD_PATH="$(pwd)" guile examples/procedural-grid.scm
 
 (use-modules (oop goops)
              (ice-9 match)
@@ -58,8 +58,12 @@
           (list-tabulate 10 (lambda (_) (make <actor>))))
          (segments
           (get-road-segments world))
+         (num-segments
+          (length segments))
+         (random-segment
+          (lambda () (list-ref segments (random-integer num-segments))))
          (random-side
-          (lambda () (if (even? (random-integer)) 'forw 'back)))
+          (lambda () (if (even? (random-integer 2)) 'forw 'back)))
          (random-location
           (lambda () (make <location-off-road>
                        #:road-segment (random-segment)

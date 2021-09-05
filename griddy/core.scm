@@ -8,10 +8,11 @@
   #:use-module (griddy util)
   #:use-module (griddy math)
   #:duplicates (warn merge-generics)
-  #:export (<actor>
-            <location>
-            <location-on-road>
+  #:export (
+            <actor>
             <location-off-road>
+            <location-on-road>
+            <location>
             <point-like>
             <road-junction>
             <road-lane>
@@ -20,11 +21,13 @@
             <static>
             <world>
             add!
+            agenda-append!
+            agenda-pop!
             get-actors
-            get-offset
             get-incoming-lanes
             get-length
             get-midpoint
+            get-offset
             get-outgoing-lanes
             get-pos
             get-road-junctions
@@ -36,10 +39,12 @@
             get-width
             link!
             match-direction
-            agenda-pop!
-            agenda-append!
+            off-road->on-road
+            on-road->off-road
+            route-pop!
             segment
-            set-route!))
+            set-route!
+            ))
 
 (define *core/road-lane/width* 20)
 (define *core/road-segment/wiggle-room-%* 10)
@@ -115,6 +120,21 @@
          (val (slot-ref segment slot))
          (new-val (+ 1 val)))
     (slot-set! segment slot new-val)))
+
+(define-method (get-outer-lane (segment <road-segment>) (direction <symbol>))
+  (match `(,direction
+           ,(get segment 'back-lane-count)
+           ,(get segment 'forw-lane-count))
+    (((or 'forw 'back) 0 0)
+     (throw 'road-has-no-lanes))
+    (('back 0 _)
+     (get-min-forw-lane))
+    (('back _ 0)
+     (get-min-back-lane))
+    (('forw 0 _)
+     (get-max-forw-lane))
+    (('forw _ 0)
+     (get-max-back-lane))))
 
 (define-method (get-width (segment <road-segment>))
   (* (+ 1 (/ *core/road-segment/wiggle-room-%* 100))
@@ -194,13 +214,15 @@
         (v-stop   (get loc 'road-segment 'stop-junction  'pos))
         (v-offset (* 1/2
                      (get-width (get loc 'road-lane 'road-segment))
-                     (+ 1 (/ (core/road-segment/wiggle-room-%* 100))))))
+                     (+ 1 (/ (*core/road-segment/wiggle-room-%* 100)))))
+        (pos-param (get loc 'pos-param)))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 
 (define-method (get-pos (loc <location-on-road>))
   (let ((v-start  (get loc 'road-lane 'segment 'start-junction 'pos))
         (v-stop   (get loc 'road-lane 'segment 'stop-junction  'pos))
-        (v-offset (get-offset (get loc 'road-lane))))
+        (v-offset (get-offset (get loc 'road-lane)))
+        (pos-param (get loc 'pos-param)))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 
 (define-method (on-road->off-road (loc <location-on-road>))
@@ -209,10 +231,11 @@
     #:road-segment (get loc 'road-lane 'road-segment)
     #:road-side-direction (get loc 'road-lane 'direction)))
 
-(define-method off-road->on-road (loc <location-off-road>)
+(define-method (off-road->on-road (loc <location-off-road>))
   (make <location-on-road>
     #:pos-param (get loc 'pos-param)
-    #:road-lane TODO)) ;; outermost lane on 'road-side-direction
+    #:road-lane (get-outer-lane (get loc 'road-lane 'segment)
+                                (get loc 'road-lane 'direction))))
 
 (define-class <actor> ()
   location
@@ -238,7 +261,7 @@
     (car current-agenda)))
 
 (define-method (route-pop! (actor <actor>))
-  (slot-set! route 'steps (cdr (slot-ref route 'steps))))
+  (slot-set! actor 'route (cdr (slot-ref actor 'route))))
 
 (define-class <world> ()
   (static-items ;; roads, etc
@@ -282,7 +305,10 @@
   (slot-set! segment 'start-junction junction-1)
   (slot-set! segment 'stop-junction junction-2))
 
-(define-method (link! (actor <actor>) (loc <location>))
+(define-method (link! (actor <actor>) (loc <location-off-road>))
+  (slot-set! actor 'location loc))
+
+(define-method (link! (actor <actor>) (loc <location-on-road>))
   (slot-set! actor 'location loc)
   (slot-add! (get loc 'road-lane)
              'actors

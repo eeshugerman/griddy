@@ -9,7 +9,7 @@
             zip-to-alist))
 
 
-(define append-1 (l item)
+(define (append-1 l item)
   (append l (list item)))
 
 (define-method (add-to (container <list>) val)
