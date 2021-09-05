@@ -15,9 +15,12 @@
             (griddy draw)
             (griddy simulate)))
 
+(define (random-bool)
+  (even? (random-integer 2)))
+
 (define (make-skeleton)
   (let* ((world (make <world>))
-         (n 4)
+         (n 5)
          (junctions (make-array *unspecified* n n))
          (segments (make-array *unspecified* 2 n n)))
 
@@ -42,25 +45,39 @@
                                   (array-ref junctions (+ j 1) k)))
                   (segment (make <road-segment>))
                   (lane-1 (make <road-lane> #:direction 'forw))
-                  (lane-2 (make <road-lane> #:direction 'back)))
+                  (lane-2 (make <road-lane> #:direction 'back))
+                  (lane-3 (make <road-lane> #:direction 'forw))
+                  (lane-4 (make <road-lane> #:direction 'back)))
+
              (link! junction-1 segment junction-2)
              (link! lane-1 segment)
              (link! lane-2 segment)
              (add! world segment)
              (add! world lane-1)
-             (add! world lane-2)))))
+             (add! world lane-2)
+
+             (when (and (= i 0) (even? j))
+               (let* ((up (= 0 (remainder j 4)))
+                      (lane (if up lane-3 lane-4)))
+                 (link! lane segment)
+                 (add! world lane)))
+
+             (when (and (= i 1) (even? k))
+               (let* ((up (= 0 (remainder k 4)))
+                      (lane (if up lane-3 lane-4)))
+                 (link! lane segment)
+                 (add! world lane)))))))
 
     world))
 
 (define (add-actors! world)
   (random-source-randomize! default-random-source)
-  (let* ((actors       (list-tabulate 10 (lambda (_) (make <actor>))))
+  (let* ((actors       (list-tabulate 100 (lambda (_) (make <actor> #:max-speed 50))))
          (segments     (get-road-segments world))
          (num-segments (length segments))
          (random-location
           (lambda ()
-            (let* ((random-bool (lambda () (even? (random-integer 2))))
-                   (segment     (list-ref segments (random-integer num-segments)))
+            (let* ((segment     (list-ref segments (random-integer num-segments)))
                    (side        (if (random-bool) 'forw 'back))
                    (pos-param   ((if (random-bool) + -)
                                  1/2
@@ -76,4 +93,4 @@
        (agenda-append! actor `(travel-to ,(random-location))))
      actors)))
 
-(simulate make-skeleton add-actors! #:width 550 #:height 550)
+(simulate make-skeleton add-actors! #:width 700 #:height 700)

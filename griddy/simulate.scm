@@ -11,6 +11,10 @@
   ;; #:use-module (griddy simulate route)
   #:export (simulate))
 
+
+(define *simulate/fps* 20)
+(define *simulate/time-step* (/ 1 *simulate/fps*))
+
 ;; workaround for goops/module funkiness
 (include "simulate/route.scm")
 
@@ -125,6 +129,7 @@
   (run-game
    #:load load
    #:update update
+   #:update-hz *simulate/fps*
    #:draw (lambda (alpha) (draw-world world))
    #:window-width width
    #:window-height height))

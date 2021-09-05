@@ -21,9 +21,6 @@
 (use-modules (chickadee math path-finding)
              (griddy math))
 
-(define *simulate/fps* 25)
-(define *simulate/time-step* (/ 1 *simulate/fps*))
-
 ;; assumes all road have unbroken medians
 (define-method (find-route (init <location-on-road>) (dest <location-on-road>))
   (define (neighbors lane)

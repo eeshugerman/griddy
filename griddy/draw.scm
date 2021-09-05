@@ -15,12 +15,12 @@
 
 ;; TODO: Possible to use GOOPS?
 
-(define *draw/road-junction/size* 40)
+(define *draw/road-junction/size* 25)
 (define *draw/road-junction/color* tango-aluminium-6)
 (define *draw/road-segment/color* tango-aluminium-5)
 (define *draw/road-lane/arrow-size* 5)
 (define *draw/road-lane/color* tango-plum)
-(define *draw/actor/size* 10)
+(define *draw/actor/size* 5)
 (define *draw/actor/color* tango-light-chameleon)
 
 (define with-canvas (compose draw-canvas make-canvas))

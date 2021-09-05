@@ -48,8 +48,8 @@
             set-route!
             ))
 
-(define *core/road-lane/width* 20)
-(define *core/road-segment/wiggle-room-%* 10)
+(define *core/road-lane/width* 10)
+(define *core/road-segment/wiggle-room-%* 5)
 
 (define-syntax-rule (match-direction lane if-forw if-back)
   (case (get lane 'direction)
