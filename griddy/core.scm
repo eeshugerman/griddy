@@ -128,6 +128,8 @@
           (get-lanes junction)))
 
 (define-class <road-segment> (<static>)
+  (actors ;; off-road only, otherwise they belong to lanes
+   #:init-thunk list)
   start-junction
   stop-junction
   ;; lane lists are ascending by rank
@@ -185,11 +187,11 @@
      (throw 'road-has-no-lanes))
     (('back 0 _)
      (first (get-lanes segment 'forw)))
-    (('back _ 0)
-     (first (get-lanes segment 'back)))
-    (('forw 0 _)
-     (last (get-lanes segment 'forw)))
     (('forw _ 0)
+     (last (get-lanes segment 'back)))
+    (('forw _ _)
+     (last (get-lanes segment 'forw)))
+    (('back _ _)
      (last (get-lanes segment 'back)))))
 
 (define-method (get-width (segment <road-segment>))
@@ -226,12 +228,14 @@
               v-offset))
 
 (define-method (get-pos (loc <location-off-road>))
-  (let ((v-start  (get loc 'road-segment 'start-junction 'pos))
-        (v-stop   (get loc 'road-segment 'stop-junction  'pos))
-        (v-offset (* 1/2
-                     (get-width (get loc 'road-lane 'road-segment))
-                     (+ 1 (/ (*core/road-segment/wiggle-room-%* 100)))))
-        (pos-param (get loc 'pos-param)))
+  (let* ((segment (get loc 'road-segment))
+         (v-start  (get segment 'start-junction 'pos))
+         (v-stop   (get segment 'stop-junction  'pos))
+         (v-offset (vec2* (get-v-ortho segment)
+                          (* 1/2
+                             (get-width (get loc 'road-segment))
+                             (+ 1 (/ *core/road-segment/wiggle-room-%* 100)))))
+         (pos-param (get loc 'pos-param)))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 
 (define-method (get-pos (loc <location-on-road>))
@@ -250,8 +254,8 @@
 (define-method (off-road->on-road (loc <location-off-road>))
   (make <location-on-road>
     #:pos-param (get loc 'pos-param)
-    #:road-lane (get-outer-lane (get loc 'road-lane 'segment)
-                                (get loc 'road-lane 'direction))))
+    #:road-lane (get-outer-lane (get loc 'road-segment)
+                                (get loc 'road-side-direction))))
 
 (define-class <actor> ()
   location
@@ -296,9 +300,10 @@
           (get world 'static-items)))
 
 (define-method (get-actors (world <world>))
-  (define (lane-into-actors lane actors)
-    (append actors (get lane 'actors)))
-  (fold lane-into-actors (list) (get-road-lanes world)))
+  (define (into-actors container actors)
+    (append actors (get container 'actors)))
+  (append (fold into-actors (list) (get-road-lanes world))
+          (fold into-actors (list) (get-road-segments world))))
 
 
 ;; -----------------------------------------------------------------------------
@@ -317,13 +322,12 @@
   (slot-set! segment 'stop-junction  junction-2))
 
 (define-method (link! (actor <actor>) (loc <location-off-road>))
-  (slot-set! actor 'location loc))
+  (slot-set! actor 'location loc)
+  (slot-add! (get loc 'road-segment) 'actors actor))
 
 (define-method (link! (actor <actor>) (loc <location-on-road>))
   (slot-set! actor 'location loc)
-  (slot-add! (get loc 'road-lane)
-             'actors
-             (cons (get loc 'pos-param) actor)))
+  (slot-add! (get loc 'road-lane) 'actors actor))
 
 (define-method (add! (world <world>) (static-item <static>))
   (slot-add! world 'static-items static-item))

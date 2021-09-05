@@ -43,8 +43,8 @@
   (define-method (++ (location <location-off-road>))
     (make <location-off-road>
       #:pos-param (get location 'pos-param)
-      #:road-segment (get location 'road-lane 'road-segment)
-      #:road-side-direction (get location 'direction)))
+      #:road-segment (get location 'road-segment)
+      #:road-side-direction (get location 'road-side-direction)))
 
   (define-method (++ (actor <actor>))
     (hash-table-ref
@@ -56,7 +56,7 @@
          (if (slot-bound? actor slot)
              (slot-set! new-actor slot (++ (slot-ref actor slot)))))
        (for-each copy-slot-if-bound!
-                 '(max-speed agenda route))
+                 '(max-speed agenda route location))
        (hash-table-set! actors-table actor new-actor)
        new-actor)))
 
@@ -105,8 +105,8 @@
 (define* (simulate make-skeleton add-actors! #:key (width 500) (height 500))
   (define (load)
     (set! world (make-skeleton))
-    (add-actors! world)
-    (display (length (get-actors world))))
+    (add-actors! world))
+
 
   (define (update delta-t)
     (let* ((world++ (make-skeleton))
