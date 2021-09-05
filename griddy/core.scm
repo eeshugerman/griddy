@@ -231,10 +231,13 @@
   (let* ((segment (get loc 'road-segment))
          (v-start  (get segment 'start-junction 'pos))
          (v-stop   (get segment 'stop-junction  'pos))
-         (v-offset (vec2* (get-v-ortho segment)
-                          (* 1/2
+         (v-offset (vec2* (get-v-ortho segment)  ;; magnitude is arbitrary
+                          (* (match (get loc 'road-side-direction)
+                               ('forw +1)
+                               ('back -1))
+                             1/2
                              (get-width (get loc 'road-segment))
-                             (+ 1 (/ *core/road-segment/wiggle-room-%* 100)))))
+                             (+ 1 (* 2 (/ *core/road-segment/wiggle-room-%* 100))))))
          (pos-param (get loc 'pos-param)))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 
@@ -248,7 +251,7 @@
 (define-method (on-road->off-road (loc <location-on-road>))
   (make <location-off-road>
     #:pos-param (get loc 'pos-param)
-    #:road-segment (get loc 'road-lane 'road-segment)
+    #:road-segment (get loc 'road-lane 'segment)
     #:road-side-direction (get loc 'road-lane 'direction)))
 
 (define-method (off-road->on-road (loc <location-off-road>))

@@ -54,21 +54,21 @@
 
 (define (add-actors! world)
   (random-source-randomize! default-random-source)
-  (let* ((actors
-          (list-tabulate 10 (lambda (_) (make <actor>))))
-         (segments
-          (get-road-segments world))
-         (num-segments
-          (length segments))
-         (random-segment
-          (lambda () (list-ref segments (random-integer num-segments))))
-         (random-side
-          (lambda () (if (even? (random-integer 2)) 'forw 'back)))
+  (let* ((actors       (list-tabulate 10 (lambda (_) (make <actor>))))
+         (segments     (get-road-segments world))
+         (num-segments (length segments))
          (random-location
-          (lambda () (make <location-off-road>
-                       #:road-segment (random-segment)
-                       #:road-side-direction (random-side)
-                       #:pos-param (random-real)))))
+          (lambda ()
+            (let* ((random-bool (lambda () (even? (random-integer 2))))
+                   (segment     (list-ref segments (random-integer num-segments)))
+                   (side        (if (random-bool) 'forw 'back))
+                   (pos-param   ((if (random-bool) + -)
+                                 1/2
+                                 (* 1/4 (random-real)))))
+              (make <location-off-road>
+                #:road-segment segment
+                #:road-side-direction side
+                #:pos-param pos-param)))))
     (for-each
      (lambda (actor)
        (link! actor (random-location))

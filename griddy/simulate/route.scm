@@ -82,10 +82,10 @@
               pos-param-target
               (+ pos-param-current pos-param-delta-max))))
     (when done
-      (route-pop! actor ++))
+      (route-pop! actor++))
     (link! actor++ (make <location-on-road>
-                     #:pos-param pos-param-next
-                     #:road-lane lane-current))))
+                     #:pos-param (++ pos-param-next)
+                     #:road-lane (++ lane-current)))))
 
 (define (route-step/turn-onto$ ++ actor lane-next)
   (let* ((actor++              (++ actor))
@@ -116,7 +116,7 @@
                      #:pos-param pos-param-next))))
 
 (define-method (advance-on-route$ (++ <generic>) (actor <actor>))
-  ;; TODO: don't use 'arrive-at/'turn-onto, just <lane> or <number>
+  ;; TODO: maybe don't use 'arrive-at/'turn-onto, just <lane> or <number>
   (match (car (get actor 'route))
-    (('arrive-at pos-param) (route-step/arrive-at$ actor ++ pos-param))
-    (('turn-onto road-lane) (route-step/turn-onto$ actor ++ road-lane))))
+    (('arrive-at pos-param) (route-step/arrive-at$ ++ actor pos-param))
+    (('turn-onto road-lane) (route-step/turn-onto$ ++ actor road-lane))))

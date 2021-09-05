@@ -37,14 +37,14 @@
 
   (define-method (++ (location <location-on-road>))
     (make <location-on-road>
-      #:pos-param (get location 'pos-param)
+      #:pos-param (++ (get location 'pos-param))
       #:road-lane (++ (get location 'road-lane))))
 
   (define-method (++ (location <location-off-road>))
     (make <location-off-road>
-      #:pos-param (get location 'pos-param)
-      #:road-segment (get location 'road-segment)
-      #:road-side-direction (get location 'road-side-direction)))
+      #:pos-param (++ (get location 'pos-param))
+      #:road-segment (++ (get location 'road-segment))
+      #:road-side-direction (++ (get location 'road-side-direction))))
 
   (define-method (++ (actor <actor>))
     (hash-table-ref
@@ -66,10 +66,11 @@
   (link! (++ actor)
          (++ (get actor 'location))))
 
-(define-method (begin-route$ (++ <generic>) (actor <actor>))
+(define-method (begin-route$
+                (++ <generic>) (actor <actor>) (dest <location-off-road>))
   (let* ((actor++ (++ actor))
          (init-loc++ (off-road->on-road (get actor++ 'location)))
-         (dest-loc++ (off-road->on-road (cadar (get actor++ 'agenda))))
+         (dest-loc++ (off-road->on-road (++ dest)))
          (route++    (find-route init-loc++ dest-loc++)))
     (set-route! actor++ route++)
     (link! actor++ init-loc++)))
@@ -85,7 +86,7 @@
   (let ((agenda-status
          (match (get actor 'agenda)
            (()                     'nothing)
-           ((('travel-to _) _ ...) 'traveling)))
+           ((agenda-step _ ...)    agenda-step)))
 
         (route-status
          (match (get actor 'route)
@@ -94,10 +95,10 @@
            (()      'done))))
 
     (match `(,agenda-status ,route-status)
-      (('nothing   'none) (do-nothing$       ++ actor))
-      (('traveling 'none) (begin-route$      ++ actor))
-      (('traveling 'some) (advance-on-route$ ++ actor))
-      (('traveling 'done) (end-route$        ++ actor))
+      (('nothing          'none) (do-nothing$       ++ actor))
+      ((('travel-to dest) 'none) (begin-route$      ++ actor dest))
+      ((('travel-to dest) 'some) (advance-on-route$ ++ actor))
+      ((('travel-to dest) 'done) (end-route$        ++ actor))
       )))
 
 (define world #f)
