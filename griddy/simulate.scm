@@ -66,6 +66,12 @@
   (link! (++ actor)
          (++ (get actor 'location))))
 
+(define-method (sleep$ (++ <generic>) (actor <actor>) time)
+  (if (= time 0)
+    (agenda-pop! (++ actor))
+    (set-car! (get (++ actor) 'agenda) `(sleep-for ,(- time 1))))
+  (do-nothing$ ++ actor))
+
 (define-method (begin-route$
                 (++ <generic>) (actor <actor>) (dest <location-off-road>))
   (let* ((actor++ (++ actor))
@@ -96,6 +102,7 @@
 
     (match `(,agenda-status ,route-status)
       (('nothing          'none) (do-nothing$       ++ actor))
+      ((('sleep-for time) 'none) (sleep$            ++ actor time))
       ((('travel-to dest) 'none) (begin-route$      ++ actor dest))
       ((('travel-to dest) 'some) (advance-on-route$ ++ actor))
       ((('travel-to dest) 'done) (end-route$        ++ actor))
