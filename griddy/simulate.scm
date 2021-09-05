@@ -71,8 +71,8 @@
          (init-loc++ (off-road->on-road (get actor++ 'location)))
          (dest-loc++ (off-road->on-road (cadar (get actor++ 'agenda))))
          (route++    (find-route init-loc++ dest-loc++)))
-    (set-route! actor++ route)
-    (link! actor++ location++)))
+    (set-route! actor++ route++)
+    (link! actor++ init-loc++)))
 
 (define-method (end-route$ (++ <generic>) (actor <actor>))
   (let* ((actor++    (++ actor))
@@ -105,7 +105,8 @@
 (define* (simulate make-skeleton add-actors! #:key (width 500) (height 500))
   (define (load)
     (set! world (make-skeleton))
-    (add-actors! world))
+    (add-actors! world)
+    (display (length (get-actors world))))
 
   (define (update delta-t)
     (let* ((world++ (make-skeleton))

@@ -82,7 +82,7 @@
                      (fill-color *draw/road-lane/color*))
           (superimpose line-painter arrow-painter))))
 
-    (let* ((lane-painters (map draw-road-lane (get segment 'lanes))))
+    (let* ((lane-painters (map draw-road-lane (get-lanes segment))))
       (with-canvas (apply superimpose road-painter (reverse lane-painters))))))
 
 (define (draw-actor actor)
