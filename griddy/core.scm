@@ -242,9 +242,9 @@
     (get-pos-helper v-start v-stop v-offset pos-param)))
 
 (define-method (get-pos (loc <location-on-road>))
-  (let ((v-start  (get loc 'road-lane 'segment 'start-junction 'pos))
-        (v-stop   (get loc 'road-lane 'segment 'stop-junction  'pos))
-        (v-offset (get-offset (get loc 'road-lane)))
+  (let ((v-start   (get loc 'road-lane 'segment 'start-junction 'pos))
+        (v-stop    (get loc 'road-lane 'segment 'stop-junction  'pos))
+        (v-offset  (get-offset (get loc 'road-lane)))
         (pos-param (get loc 'pos-param)))
     (get-pos-helper v-start v-stop v-offset pos-param)))
 

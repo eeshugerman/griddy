@@ -39,16 +39,13 @@
     (l2 (get-midpoint (get lane-1 'segment))
         (get-midpoint (get lane-2 'segment))))
 
-  (let* ((route-finder (make-path-finder))
-         (start-lane   (get init 'road-lane))
-         (stop-lane    (get dest 'road-lane))
-         (lanes        (a* route-finder
-                           start-lane
-                           stop-lane
-                           neighbors
-                           cost
-                           distance))
-         (lane->route-step      (cut list 'turn-onto <>))
+  (let* ((lanes (a* (make-path-finder)
+                    (get init 'road-lane)
+                    (get dest 'road-lane)
+                    neighbors
+                    cost
+                    distance))
+         (lane->route-step (cut list 'turn-onto <>))
          (pos-param->route-step (cut list 'arrive-at <>)))
     (append-1 (map lane->route-step (cdr lanes))
               (pos-param->route-step (get dest 'pos-param)))))
@@ -87,12 +84,12 @@
          (pos-param-next-naive (+ pos-param-current pos-param-delta-max))
          (direction-next       (get lane-next 'direction))
          (done
-          (match (list direction-current pos-param-next-naive)
+          (match `(,direction-current ,pos-param-next-naive)
             (('forw (? (cut >= <> 1))) #t)
             (('back (? (cut <= <> 0))) #t)
             (_ #f)))
          (pos-param-next
-          (match (list done direction-current direction-next)
+          (match `(,done ,direction-current ,direction-next)
             ((#f _ _) pos-param-next-naive)
             ;; TODO: using `pos-param-next-naive' here assumes
             ;;       (= (get-length lane-current) (get-length lane-next))
