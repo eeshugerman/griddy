@@ -89,8 +89,8 @@
     (for-each
      (lambda (actor)
        (link! actor (random-location))
-       (agenda-append! actor `(sleep-for ,(random-integer 500)))
-       (agenda-append! actor `(travel-to ,(random-location))))
+       (push-agenda-item! actor `(sleep-for ,(random-integer 500)))
+       (push-agenda-item! actor `(travel-to ,(random-location))))
      actors)))
 
 (simulate make-skeleton add-actors! #:width 700 #:height 700)

@@ -58,7 +58,7 @@
        (define new-actor (make <actor>))
        (define (copy-slot-if-bound! slot)
          (if (slot-bound? actor slot)
-             (slot-set! new-actor slot (++ (slot-ref actor slot)))))
+             (set! new-actor slot (++ (slot-ref actor slot)))))
        (for-each copy-slot-if-bound!
                  '(max-speed agenda route))
        (hash-table-set! actors-table actor new-actor)
@@ -72,7 +72,7 @@
 
 (define-method (sleep$ (++ <generic>) (actor <actor>) time)
   (if (= time 0)
-    (agenda-pop! (++ actor))
+    (pop-agenda-item! (++ actor))
     (set-car! (get (++ actor) 'agenda) `(sleep-for ,(- time 1))))
   (do-nothing$ ++ actor))
 
@@ -85,7 +85,7 @@
 
 (define-method (end-route$ (++ <generic>) (actor <actor>))
   (set-route! (++ actor) 'none)
-  (agenda-pop! (++ actor))
+  (pop-agenda-item! (++ actor))
   (link! (++ actor)
          (++ (on-road->off-road (get actor 'location)))))
 

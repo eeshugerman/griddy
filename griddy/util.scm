@@ -1,48 +1,63 @@
 (define-module (griddy util)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-26)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
   #:export (get
+            add!
             append-1
-            slot-add!
-            slot-append!
-            zip-to-alist))
+            append-1!
+            zip-to-alist)
+  #:replace (set!))
 
 
-(define (append-1 l item)
-  (append l (list item)))
+(define (but-last list') (drop-right list' 1))
 
-(define-method (add-to (container <list>) val)
-  (cons val container))
+(define (append-1 list' item)
+  (append list' (list item)))
 
-(define-method (append-to (container <list>) val)
-  (append-1 container val))
+(define (prepend-1! list' item)
+  (let ((first (car list'))
+        (rest  (cdr list')))
+    (set-car! list' val)
+    (set-cdr! list' (cons first rest))))
 
-(define (slot-add! obj slot val)
-  (let* ((old-container (slot-ref obj slot))
-         (new-container (add-to old-container val)))
-    (slot-set! obj slot new-container)))
-
-(define (slot-append! obj slot val)
-  (let* ((old-container (slot-ref obj slot))
-         (new-container (append-to old-container val)))
-    (slot-set! obj slot new-container)))
+(define (append-1! list' item)
+  (append! list' (list val)))
 
 (define (get obj . slots)
+  (define (poly-ref obj' key)
+    (if (list? obj')
+        (cdr (assq key obj'))
+        (slot-ref obj' key)))
+
   ;; apparently `match' doesn't support tail patterns?
   ;; (match slots
-  ;;   ((slots)
-  ;;    (slot-ref obj slot))
-  ;;   ((rest ... last)
-  ;;    (slot-ref (get obj rest ...) last)))
-  (define (but-last l) (drop-right l 1))
+  ;;   ((slot)
+  ;;    (poly-ref obj slot))
+  ;;   ((but-last ... last)
+  ;;    (poly-ref (get obj but-last ...) last)))
+
   (cond
    ((= 1 (length slots))
-    (slot-ref obj (car slots)))
+    (poly-ref obj (car slots)))
    (else
-    (slot-ref (apply get (cons obj (but-last slots)))
+    (poly-ref (apply get (cons obj (but-last slots)))
               (last slots)))))
 
+(define-syntax-rule (poly-set! obj key val)
+  (if (list? obj)
+      (assoc-set! obj key val)
+      (set! obj key val)))
+
+(define-syntax set!
+  (syntax-rules ()
+    ((_ var val)
+     ((@ (guile) set!) var val))
+    ((_ obj slot val)
+     (poly-set! obj slot val))
+    ((_ obj slots ... slot val)
+     (poly-set! (get obj slots ...) slot val))))
 
 (define (zip-to-alist list-1 list-2)
   (let loop ((acc '())

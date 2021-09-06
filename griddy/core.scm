@@ -22,8 +22,8 @@
             <static>
             <world>
             add!
-            agenda-append!
-            agenda-pop!
+            push-agenda-item!
+            pop-agenda-item!
             get-actors
             get-incoming-lanes
             get-lanes
@@ -43,7 +43,7 @@
             match-direction
             off-road->on-road
             on-road->off-road
-            route-pop!
+            pop-route-step!
             segment
             set-route!
             ))
@@ -114,9 +114,9 @@
         (get junction 'segments)))
 
 (define (outgoing? lane junction)
-  (or (and (eq? (get lane 'segment 'start-junction) junction)
+  (or (and (eq? (get lane 'segment 'junction 'beg) junction)
            (eq? (get lane 'direction) 'forw))
-      (and (eq? (get lane 'segment 'stop-junction) junction)
+      (and (eq? (get lane 'segment 'junction 'end) junction)
            (eq? (get lane 'direction) 'back))))
 
 (define-method (get-incoming-lanes (junction <road-junction>))
@@ -130,22 +130,29 @@
 (define-class <road-segment> (<static>)
   (actors ;; off-road only, otherwise they belong to lanes
    #:init-thunk list)
-  start-junction
-  stop-junction
+  (junction
+   #:init-form `((beg . undefined)
+                 (end . undefined)))
   ;; lane lists are ascending by rank
   ;; higher rank means further from center/median
-  (forw-lanes
-   #:init-thunk list)
-  (back-lanes
-   #:init-thunk list)
-  (forw-lane-count
-   #:init-value 0)
-  (back-lane-count
-   #:init-value 0))
+  (lanes
+   #:init-form '((forw . ())
+                 (back . ())))
+  (lane-count
+   #:init-form '((forw . 0)
+                 (back . 0))))
+
+(define-method (initialize (self <road-segment>) initargs)
+  ;; https://lists.gnu.org/archive/html/bug-guile/2018-09/msg00032.html
+  (define alist-slots '(junction lanes lane-count))
+  (define (make-mutable! slot)
+    (slot-set! self slot (copy-tree (slot-ref self slot))))
+  (next-method)
+  (for-each make-mutable! alist-slots))
 
 (define-method (get-v (segment <road-segment>))
-  (vec2- (get segment 'stop-junction 'pos)
-         (get segment 'start-junction 'pos)))
+  (vec2- (get segment 'junction 'end 'pos)
+         (get segment 'junction 'beg 'pos)))
 
 (define-method (get-v-tangent (segment <road-segment>))
   (vec2-normalize (get-v segment)))
@@ -154,30 +161,25 @@
   (vec2-rotate (get-v-tangent segment) pi/2))
 
 (define-method (get-lane-count (segment <road-segment>))
-  (+ (get segment 'forw-lane-count)
-     (get segment 'back-lane-count)))
+  (+ (get segment 'lane-count 'forw)
+     (get segment 'lane-count 'back)))
 
 (define-method (get-lane-count (segment <road-segment>) (direction <symbol>))
-  (get segment (match direction
-                 ('forw 'forw-lane-count)
-                 ('back 'back-lane-count))))
+  (get segment 'lane-count direction))
 
 (define-method (get-lanes (segment <road-segment>))
-  (append (get segment 'forw-lanes)
-          (get segment 'back-lanes)))
+  (append (get segment 'lanes 'forw)
+          (get segment 'lanes 'back)))
 
 (define-method (get-lanes (segment <road-segment>) (direction <symbol>))
-  (get segment (match direction
-                 ('forw 'forw-lanes)
-                 ('back 'back-lanes))))
+  (get segment 'lanes direction))
 
 (define-method (add-lane-set-rank! (segment <road-segment>) (lane <road-lane>))
-  (let* ((lane-slot  (match-direction lane 'forw-lanes      'back-lanes))
-         (count-slot (match-direction lane 'forw-lane-count 'back-lane-count))
-         (rank       (get segment count-slot)))
-    (slot-set! lane 'rank rank)
-    (slot-set! segment count-slot (+ 1 rank))
-    (slot-append! segment lane-slot lane)))
+  (let* ((direction (get lane 'direction))
+         (rank      (get segment count-slot)))
+    (set! lane 'rank rank)
+    (set! segment 'lane-count direction (+ 1 rank))
+    (append-1! (get segment 'lanes direction) lane)))
 
 (define-method (get-outer-lane (segment <road-segment>) (direction <symbol>))
   (match `(,direction
@@ -200,11 +202,11 @@
      (get-lane-count segment)))
 
 (define-method (get-length (segment <road-segment>))
-  (l2 (get segment 'start-junction 'pos)
-      (get segment 'stop-junction 'pos)))
+  (l2 (get segment 'junction 'beg 'pos)
+      (get segment 'junction 'end 'pos)))
 
 (define-method (get-midpoint (segment <road-segment>))
-  (vec2+ (get segment 'start-junction 'pos)
+  (vec2+ (get segment 'junction 'beg 'pos)
          (vec2* (get-v segment) 1/2)))
 
 (define-class <location> ()
@@ -222,15 +224,15 @@
   (road-side-direction
    #:init-keyword #:road-side-direction))
 
-(define (get-pos-helper v-start v-stop v-offset pos-param)
-  (vec2+/many v-start
-              (vec2* (vec2- v-stop v-start) pos-param)
+(define (get-pos-helper v-beg v-end v-offset pos-param)
+  (vec2+/many v-beg
+              (vec2* (vec2- v-end v-beg) pos-param)
               v-offset))
 
 (define-method (get-pos (loc <location-off-road>))
-  (let* ((segment (get loc 'road-segment))
-         (v-start  (get segment 'start-junction 'pos))
-         (v-stop   (get segment 'stop-junction  'pos))
+  (let* ((segment  (get loc 'road-segment))
+         (v-beg    (get segment 'junction 'beg 'pos))
+         (v-end    (get segment 'junction 'end  'pos))
          (v-offset (vec2* (get-v-ortho segment)  ;; magnitude is arbitrary
                           (* (match (get loc 'road-side-direction)
                                ('forw +1)
@@ -239,14 +241,14 @@
                              (get-width (get loc 'road-segment))
                              (+ 1 (* 2 (/ *core/road-segment/wiggle-room-%* 100))))))
          (pos-param (get loc 'pos-param)))
-    (get-pos-helper v-start v-stop v-offset pos-param)))
+    (get-pos-helper v-beg v-end v-offset pos-param)))
 
 (define-method (get-pos (loc <location-on-road>))
-  (let ((v-start   (get loc 'road-lane 'segment 'start-junction 'pos))
-        (v-stop    (get loc 'road-lane 'segment 'stop-junction  'pos))
+  (let ((v-beg     (get loc 'road-lane 'segment 'junction 'beg 'pos))
+        (v-end     (get loc 'road-lane 'segment 'junction 'end 'pos))
         (v-offset  (get-offset (get loc 'road-lane)))
         (pos-param (get loc 'pos-param)))
-    (get-pos-helper v-start v-stop v-offset pos-param)))
+    (get-pos-helper v-beg v-end v-offset pos-param)))
 
 (define-method (on-road->off-road (loc <location-on-road>))
   (make <location-off-road>
@@ -275,15 +277,15 @@
 (define-method (get-pos (actor <actor>))
   (get-pos (get actor 'location)))
 
-(define-method (agenda-append! (actor <actor>) item)
-  (slot-append! actor 'agenda item))
+(define-method (push-agenda-item! (actor <actor>) item)
+  (append-1! (get actor 'agenda) item))
 
-(define-method (agenda-pop! (actor <actor>))
+(define-method (pop-agenda-item! (actor <actor>))
   (let ((current-agenda (get actor 'agenda)))
     (slot-set! actor 'agenda (cdr current-agenda))
     (car current-agenda)))
 
-(define-method (route-pop! (actor <actor>))
+(define-method (pop-route-step! (actor <actor>))
   (slot-set! actor 'route (cdr (slot-ref actor 'route))))
 
 (define-class <world> ()
@@ -319,28 +321,30 @@
 (define-method (link! (junction-1 <road-junction>)
                       (segment    <road-segment>)
                       (junction-2 <road-junction>))
-  (slot-add! junction-1 'segments segment)
-  (slot-add! junction-2 'segments segment)
-  (slot-set! segment 'start-junction junction-1)
-  (slot-set! segment 'stop-junction  junction-2))
+  (prepend-1! (get junction-1 'segments) segment)
+  (prepend-1! (get junction-2 'segments) segment)
+  (prepend-1! (get segment 'junction 'beg) junction-1)
+  (prepend-1! (get segment 'junction 'end) junction-2))
 
 (define-method (link! (actor <actor>) (loc <location-off-road>))
   (slot-set! actor 'location loc)
-  (slot-add! (get loc 'road-segment) 'actors actor))
+  (prepend-1! (get loc 'road-segment 'actors) actor))
 
 (define-method (link! (actor <actor>) (loc <location-on-road>))
   (slot-set! actor 'location loc)
-  (slot-add! (get loc 'road-lane) 'actors actor))
+  (prepend-1! (get loc 'road-lane 'actors) actor))
 
 (define-method (add! (world <world>) (static-item <static>))
-  (slot-add! world 'static-items static-item))
+  (cons! static-item (get world 'static-items)))
 
 (define-method (add! (world <world>) (segment <road-segment>))
-  (unless (and (slot-bound? segment 'start-junction)
-               (slot-bound? segment 'stop-junction))
-    (throw 'unlinked-road-segment))
-  (when (and (null? (get segment 'forw-lanes))
-             (null? (get segment 'back-lanes)))
-    (throw 'road-segment-has-no-lanes))
-  (next-method))
+  (cond
+   [(or (eq? 'undefined (get segment 'junction 'beg))
+        (eq? 'undefined (get segment 'junction 'end)))
+    (throw 'unlinked-road-segment)]
+   [(and (null? (get segment 'lanes 'forw))
+         (null? (get segment 'lanes 'back)))
+    (throw 'road-segment-has-no-lanes)]
+   [else
+    (next-method))])
 

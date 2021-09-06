@@ -25,9 +25,10 @@
 (define-method (find-route (init <location-on-road>) (dest <location-on-road>))
   (define (neighbors lane)
     (filter (negate (cut eq? lane <>))
-            (get-outgoing-lanes (get lane 'segment (match-direction lane
-                                                     'stop-junction
-                                                     'start-junction)))))
+            (get-outgoing-lanes (get lane
+                                     'segment
+                                     'junction
+                                     (match-direction lane 'end 'beg)))))
 
   (define (cost lane-1 lane-2)
     "actual cost of moving between neighboring nodes"
@@ -71,7 +72,7 @@
               pos-param-target
               (+ pos-param-current pos-param-delta-max))))
     (when done
-      (route-pop! (++ actor)))
+      (pop-route-step! (++ actor)))
     (link! (++ actor) (make <location-on-road>
                         #:pos-param (++ pos-param-next)
                         #:road-lane (++ lane-current)))))
@@ -98,7 +99,7 @@
             ((#t 'back 'forw) (- pos-param-next-naive))
             ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
     (when done
-      (route-pop! (++ actor)))
+      (pop-route-step! (++ actor)))
     (link! (++ actor) (make <location-on-road>
                         #:road-lane (++ (if done lane-next lane-current))
                         #:pos-param (++ pos-param-next)))))

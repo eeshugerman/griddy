@@ -48,26 +48,26 @@
 
 
 (define (draw-road-segment segment)
-  (let* ((v-start (get segment 'start-junction 'pos))
-         (v-stop (get segment 'stop-junction 'pos))
+  (let* ((v-beg (get segment 'junction 'beg 'pos))
+         (v-end (get segment 'junction 'end 'pos))
          (v-to-edge (vec2* (get-v-ortho segment)
                            (/2 (get-width segment))))
-         (p-1 (vec2+ v-start v-to-edge))
-         (p-2 (vec2- v-start v-to-edge))
-         (p-3 (vec2- v-stop v-to-edge))
-         (p-4 (vec2+ v-stop v-to-edge))
+         (p-1 (vec2+ v-beg v-to-edge))
+         (p-2 (vec2- v-beg v-to-edge))
+         (p-3 (vec2- v-end v-to-edge))
+         (p-4 (vec2+ v-end v-to-edge))
          (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
 
     (define (draw-road-lane lane)
       (let* ((direction (get lane 'direction))
              (v-lane-offset (get-offset lane))
-             (v-segment (vec2- v-stop v-start))
+             (v-segment (vec2- v-end v-beg))
              (v-arrow-pos
-              (vec2+/many v-start
+              (vec2+/many v-beg
                           (vec2* v-segment 1/2)
                           v-lane-offset))
              (v-lane
-              (vec2* v-segment (match direction ('forw 1) ('back -1))))
+              (vec2* v-segment (match-direction lane +1 -1))
              (arrow-painter
               ;; `rotate' rotates clockwise (?!), triangle starts
               ;; pointing upwards
@@ -76,8 +76,8 @@
                                (fill (regular-polygon v-arrow-pos 3
                                                       *draw/road-lane/arrow-size*))))
              (line-painter
-              (stroke (line (vec2+ v-start v-lane-offset)
-                            (vec2+ v-stop v-lane-offset)))))
+              (stroke (line (vec2+ v-beg v-lane-offset)
+                            (vec2+ v-end v-lane-offset)))))
         (with-style ((stroke-color *draw/road-lane/color*)
                      (fill-color *draw/road-lane/color*))
           (superimpose line-painter arrow-painter))))
