@@ -4,26 +4,15 @@
   #:use-module (oop goops)
   #:use-module (ice-9 match)
   #:export (get
-            add!
-            append-1
-            append-1!
-            zip-to-alist)
-  #:replace (set!))
+            set!
+            extend
+            extend!
+            insert!
+            zip-to-alist))
 
 
-(define (but-last list') (drop-right list' 1))
-
-(define (append-1 list' item)
-  (append list' (list item)))
-
-(define (prepend-1! list' item)
-  (let ((first (car list'))
-        (rest  (cdr list')))
-    (set-car! list' val)
-    (set-cdr! list' (cons first rest))))
-
-(define (append-1! list' item)
-  (append! list' (list val)))
+(define (extend list' . items)
+  (append list' items))
 
 (define (get obj . slots)
   (define (poly-ref obj' key)
@@ -31,13 +20,13 @@
         (cdr (assq key obj'))
         (slot-ref obj' key)))
 
-  ;; apparently `match' doesn't support tail patterns?
   ;; (match slots
   ;;   ((slot)
   ;;    (poly-ref obj slot))
-  ;;   ((but-last ... last)
-  ;;    (poly-ref (get obj but-last ...) last)))
+  ;;   ((but-last ..1 last)
+  ;;    (poly-ref (get obj but-last ..1) last)))
 
+  (define (but-last list') (drop-right list' 1))
   (cond
    ((= 1 (length slots))
     (poly-ref obj (car slots)))
@@ -48,7 +37,7 @@
 (define-syntax-rule (poly-set! obj key val)
   (if (list? obj)
       (assoc-set! obj key val)
-      (set! obj key val)))
+      ((@ (oop goops) slot-set!) obj key val)))
 
 (define-syntax set!
   (syntax-rules ()
@@ -58,6 +47,35 @@
      (poly-set! obj slot val))
     ((_ obj slots ... slot val)
      (poly-set! (get obj slots ...) slot val))))
+
+(define-syntax insert!
+  (syntax-rules ()
+    ((_ list' val)
+     (set! list' (cons val list')))
+    ((_ obj slot val)
+     (poly-set! obj
+                slot
+                (cons val (get obj slot))))
+    ((_ obj slots ... slot val)
+     (begin
+       (display '(slots ...))
+       (poly-set! (get obj slots ...)
+                 slot
+                 (cons val (get obj slots ... slot)))))))
+
+(define-syntax extend!
+  (syntax-rules ()
+    ((_ list' val)
+     (set! list' (extend list' val)))
+    ((_ obj slot val)
+     (poly-set! obj
+                slot
+                (extend (get obj slot) val)))
+    ((_ obj slots ... slot val)
+     (poly-set! (get obj slots ...)
+                slot
+                (extend (get obj slots ... slot) val)))))
+
 
 (define (zip-to-alist list-1 list-2)
   (let loop ((acc '())

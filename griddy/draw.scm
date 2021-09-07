@@ -67,7 +67,7 @@
                           (vec2* v-segment 1/2)
                           v-lane-offset))
              (v-lane
-              (vec2* v-segment (match-direction lane +1 -1))
+              (vec2* v-segment (match-direction lane +1 -1)))
              (arrow-painter
               ;; `rotate' rotates clockwise (?!), triangle starts
               ;; pointing upwards
