@@ -75,9 +75,9 @@
           (make <location> #:road-lane lane-1-1 #:pos-param 0.75)))
 
     (link! actor-1 location-1)
-    (push-agenda-item! actor-1 `(travel-to ,dest-1))
+    (agenda-push! actor-1 `(travel-to ,dest-1))
 
     (link! actor-2 location-2)
-    (push-agenda-item! actor-2 `(travel-to ,dest-2))))
+    (agenda-push! actor-2 `(travel-to ,dest-2))))
 
 (simulate make-skeleton add-actors!)

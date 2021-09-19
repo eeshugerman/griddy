@@ -72,7 +72,7 @@
               pos-param-target
               (+ pos-param-current pos-param-delta-max))))
     (when done
-      (pop-route-step! (++ actor)))
+      (route-pop! (++ actor)))
     (link! (++ actor) (make <location-on-road>
                         #:pos-param (++ pos-param-next)
                         #:road-lane (++ lane-current)))))
@@ -99,7 +99,7 @@
             ((#t 'back 'forw) (- pos-param-next-naive))
             ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
     (when done
-      (pop-route-step! (++ actor)))
+      (route-pop! (++ actor)))
     (link! (++ actor) (make <location-on-road>
                         #:road-lane (++ (if done lane-next lane-current))
                         #:pos-param (++ pos-param-next)))))

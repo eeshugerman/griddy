@@ -15,5 +15,4 @@
  (license "")
  (home-page "")
  (inputs `(("guile" ,guile-3.0)
-           ("pfds" ,guile-pfds)
            ("chickadee" ,guile-chickadee))))

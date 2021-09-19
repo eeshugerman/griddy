@@ -21,8 +21,8 @@
             <static>
             <world>
             add!
-            push-agenda-item!
-            pop-agenda-item!
+            agenda-pop!
+            agenda-push!
             get-actors
             get-incoming-lanes
             get-lanes
@@ -39,11 +39,10 @@
             get-v-tangent
             get-width
             link!
-            match-direction
             off-road->on-road
             on-road->off-road
-            pop-route-step!
-            segment))
+            route-pop!
+            route-reset!))
 
 ;; shouldn't be necessary :/
 (define-syntax-rule (set! args ...)
@@ -51,11 +50,6 @@
 
 (define *core/road-lane/width* 10)
 (define *core/road-segment/wiggle-room-%* 5)
-
-(define-syntax-rule (match-direction lane if-forw if-back)
-  (case (ref lane 'direction)
-    ((forw) if-forw)
-    ((back) if-back)))
 
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
@@ -71,8 +65,7 @@
    #:init-thunk list))
 
 (define-method (get-offset (lane <road-lane>))
-  (let* ((segment
-          (ref lane 'segment))
+  (let* ((segment         (ref lane 'segment))
          (lane-count-from-edge
           (match (ref lane 'direction)
             ;; swap back/forw for uk-style
@@ -132,8 +125,8 @@
   (actors ;; off-road only, otherwise they belong to lanes
    #:init-thunk list)
   (junction
-   #:init-form `((beg . undefined)
-                 (end . undefined)))
+   #:init-form `((beg . ())
+                 (end . ())))
   ;; lane lists are ascending by rank
   ;; higher rank means further from center/median
   (lanes
@@ -253,8 +246,8 @@
 
 (define-method (on-road->off-road (loc <location-on-road>))
   (make <location-off-road>
-    #:pos-param (ref loc 'pos-param)
-    #:road-segment (ref loc 'road-lane 'segment)
+    #:pos-param           (ref loc 'pos-param)
+    #:road-segment        (ref loc 'road-lane 'segment)
     #:road-side-direction (ref loc 'road-lane 'direction)))
 
 (define-method (off-road->on-road (loc <location-off-road>))
@@ -277,16 +270,19 @@
 (define-method (get-pos (actor <actor>))
   (get-pos (ref actor 'location)))
 
-(define-method (push-agenda-item! (actor <actor>) item)
+(define-method (agenda-push! (actor <actor>) item)
   (extend! (ref actor 'agenda) item))
 
-(define-method (pop-agenda-item! (actor <actor>))
+(define-method (agenda-pop! (actor <actor>))
   (let ((current-agenda (ref actor 'agenda)))
     (set! (ref actor 'agenda) (cdr current-agenda))
     (car current-agenda)))
 
-(define-method (pop-route-step! (actor <actor>))
-  (set! (ref actor 'route) (cdr (slot-ref actor 'route))))
+(define-method (route-pop! (actor <actor>))
+  (set! (ref actor 'route) (cdr (ref actor 'route))))
+
+(define-method (route-reset! (actor <actor>))
+  (set! (ref actor 'route) 'none))
 
 (define-class <world> ()
   (static-items ;; roads, etc
@@ -339,12 +335,11 @@
 
 (define-method (add! (world <world>) (segment <road-segment>))
   (cond
-   [(or (eq? 'undefined (ref segment 'junction 'beg))
-        (eq? 'undefined (ref segment 'junction 'end)))
+   [(or (null? (ref segment 'junction 'beg))
+        (null? (ref segment 'junction 'end)))
     (throw 'unlinked-road-segment)]
    [(and (null? (ref segment 'lanes 'forw))
          (null? (ref segment 'lanes 'back)))
     (throw 'road-segment-has-no-lanes)]
    [else
     (next-method)]))
-

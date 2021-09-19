@@ -5,11 +5,10 @@
   #:use-module (ice-9 match)
   #:replace (set!)
   #:export (ref
+            match-direction
             extend
             extend!
-            insert!
-            zip-to-alist))
-
+            insert!))
 
 (define (extend list' . items)
   (append list' items))
@@ -17,22 +16,14 @@
 (define (ref obj . slots)
   (define (poly-ref obj' key)
     (if (list? obj')
-        (cdr (assq key obj'))
+        (assq-ref obj' key)
         (slot-ref obj' key)))
-
-  ;; (match slots
-  ;;   ((slot)
-  ;;    (poly-ref obj slot))
-  ;;   ((but-last ..1 last)
-  ;;    (poly-ref (ref obj but-last ..1) last)))
-
-  (define (but-last list') (drop-right list' 1))
-  (cond
-   ((= 1 (length slots))
-    (poly-ref obj (car slots)))
-   (else
-    (poly-ref (apply ref (cons obj (but-last slots)))
-              (last slots)))))
+  (match slots
+    ((slot)
+     (poly-ref obj slot))
+    ((slots ... slot)
+     (poly-ref (apply ref (cons obj slots))
+               slot))))
 
 (define (poly-set! obj key val)
   (if (list? obj)
@@ -74,17 +65,7 @@
                 slot
                 (extend (ref obj slots ... slot) vals ...)))))
 
-
-(define (zip-to-alist list-1 list-2)
-  (let loop ((acc '())
-             (list-1* list-1)
-             (list-2* list-2))
-    (match (cons list-1* list-2*)
-      ((() . ())
-       acc)
-      ((or (() . (_ ...)) ((_ ...) . ()))
-       (throw 'list-have-different-lengths))
-      (((head-1 tail-1 ...) . (head-2 tail-2 ...))
-       (loop (cons (cons head-1 head-2) acc)
-             tail-1
-             tail-2)))))
+(define-syntax-rule (match-direction lane if-forw if-back)
+  (case (ref lane 'direction)
+    ((forw) if-forw)
+    ((back) if-back)))

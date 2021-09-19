@@ -20,10 +20,15 @@
 
 (define (make-++ world world++)
   (define static-items-table
-    (alist->hash-table
-     (zip-to-alist (ref world 'static-items)
-                   (ref world++ 'static-items))
-     eq?))
+    (let loop ((table   (make-hash-table eq?))
+               (items   (ref world 'static-items))
+               (items++ (ref world++ 'static-items)))
+      (match `(,items ,items++)
+        ((()())
+         table)
+        (((item rest ...) (item++ rest++ ...))
+         (hash-table-set! table item item++)
+         (loop table rest rest++)))))
 
   (define actors-table ((@ (srfi srfi-69) make-hash-table) eq?))
 
@@ -71,7 +76,7 @@
 
 (define-method (sleep$ (++ <generic>) (actor <actor>) time)
   (if (= time 0)
-    (pop-agenda-item! (++ actor))
+    (agenda-pop! (++ actor))
     (set-car! (ref (++ actor) 'agenda) `(sleep-for ,(- time 1))))
   (do-nothing$ ++ actor))
 
@@ -83,8 +88,8 @@
     (link! (++ actor) (++ init-loc))))
 
 (define-method (end-route$ (++ <generic>) (actor <actor>))
-  (set! (ref (++ actor) 'route) 'none)
-  (pop-agenda-item! (++ actor))
+  (route-reset! (++ actor))
+  (agenda-pop! (++ actor))
   (link! (++ actor)
          (++ (on-road->off-road (ref actor 'location)))))
 
