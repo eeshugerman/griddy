@@ -6,9 +6,9 @@
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (chickadee math vector)
-  #:use-module (griddy util) #:replace (set!)
+  #:use-module (griddy util)
   #:use-module (griddy math)
-  #:duplicates (warn merge-generics)
+  #:duplicates (merge-generics)
   #:export (<actor>
             <location-off-road>
             <location-on-road>
@@ -43,8 +43,11 @@
             off-road->on-road
             on-road->off-road
             pop-route-step!
-            segment
-            set-route!))
+            segment))
+
+;; shouldn't be necessary :/
+(define-syntax-rule (set! args ...)
+  ((@ (griddy util) set!) args ...))
 
 (define *core/road-lane/width* 10)
 (define *core/road-segment/wiggle-room-%* 5)
@@ -101,8 +104,8 @@
    #:init-thunk list))
 
 (define-method (initialize (self <road-junction>) initargs)
-  (set! self 'pos (vec2 (get-keyword #:x initargs)
-                             (get-keyword #:y initargs)))
+  (set! (get self 'pos) (vec2 (get-keyword #:x initargs)
+                              (get-keyword #:y initargs)))
   (next-method))
 
 (define-method (get-lanes (junction <road-junction>))
@@ -144,7 +147,7 @@
   ;; https://lists.gnu.org/archive/html/bug-guile/2018-09/msg00032.html
   (define alist-slots '(junction lanes lane-count))
   (define (make-mutable! slot)
-    (set! self slot (copy-tree (get self slot))))
+    (set! (get self slot) (copy-tree (get self slot))))
   (next-method)
   (for-each make-mutable! alist-slots))
 
@@ -174,15 +177,15 @@
 
 (define-method (add-lane-set-rank! (segment <road-segment>) (lane <road-lane>))
   (let* ((direction (get lane 'direction))
-         (rank      (get segment 'lane-counts direction)))
-    (set! lane 'rank rank)
-    (set! segment 'lane-count direction (+ 1 rank))
-    (extend! segment 'lanes direction lane)))
+         (rank      (get segment 'lane-count direction)))
+    (set! (get lane 'rank) rank)
+    (set! (get segment 'lane-count direction) (+ 1 rank))
+    (extend! (get segment 'lanes direction) lane)))
 
 (define-method (get-outer-lane (segment <road-segment>) (direction <symbol>))
   (match `(,direction
-           ,(get segment 'back-lane-count)
-           ,(get segment 'forw-lane-count))
+           ,(get segment 'lane-count 'back)
+           ,(get segment 'lane-count 'forw))
     (((or 'forw 'back) 0 0)
      (throw 'road-has-no-lanes))
     (('back 0 _)
@@ -267,8 +270,7 @@
    #:init-value 25) ;; units / second
   (route ;; 'none or list
          ;; '() means end of route
-   #:init-form 'none
-   #:setter set-route!)
+   #:init-form 'none)
   (agenda
    #:init-thunk list))
 
@@ -276,15 +278,15 @@
   (get-pos (get actor 'location)))
 
 (define-method (push-agenda-item! (actor <actor>) item)
-  (extend! actor 'agenda item))
+  (extend! (get actor 'agenda) item))
 
 (define-method (pop-agenda-item! (actor <actor>))
   (let ((current-agenda (get actor 'agenda)))
-    (set! actor 'agenda (cdr current-agenda))
+    (set! (get actor 'agenda) (cdr current-agenda))
     (car current-agenda)))
 
 (define-method (pop-route-step! (actor <actor>))
-  (set! actor 'route (cdr (slot-ref actor 'route))))
+  (set! (get actor 'route) (cdr (slot-ref actor 'route))))
 
 (define-class <world> ()
   (static-items ;; roads, etc
@@ -313,7 +315,7 @@
 (define-method (link! (lane <road-lane>) (segment <road-segment>))
   (if (slot-bound? lane 'segment)
       (throw 'lane-already-linked lane segment))
-  (set! lane 'segment segment)
+  (set! (get lane 'segment) segment)
   (add-lane-set-rank! segment lane))
 
 (define-method (link! (junction-1 <road-junction>)
@@ -321,19 +323,19 @@
                       (junction-2 <road-junction>))
   (insert! (get junction-1 'segments) segment)
   (insert! (get junction-2 'segments) segment)
-  (insert! (get segment 'junction 'beg) junction-1)
-  (insert! (get segment 'junction 'end) junction-2))
+  (set! (get segment 'junction 'beg) junction-1)
+  (set! (get segment 'junction 'end) junction-2))
 
 (define-method (link! (actor <actor>) (loc <location-off-road>))
-  (set! actor 'location loc)
+  (set! (get actor 'location) loc)
   (insert! (get loc 'road-segment 'actors) actor))
 
 (define-method (link! (actor <actor>) (loc <location-on-road>))
-  (set! actor 'location loc)
+  (set! (get actor 'location) loc)
   (insert! (get loc 'road-lane 'actors) actor))
 
 (define-method (add! (world <world>) (static-item <static>))
-  (insert! world 'static-items static-item))
+  (insert! (get world 'static-items) static-item))
 
 (define-method (add! (world <world>) (segment <road-segment>))
   (cond

@@ -11,7 +11,6 @@
   ;; #:use-module (griddy simulate route)
   #:export (simulate))
 
-
 (define *simulate/fps* 20)
 (define *simulate/time-step* (/ 1 *simulate/fps*))
 
@@ -58,7 +57,7 @@
        (define new-actor (make <actor>))
        (define (copy-slot-if-bound! slot)
          (if (slot-bound? actor slot)
-             (set! new-actor slot (++ (slot-ref actor slot)))))
+             (set! (get new-actor slot) (++ (get actor slot)))))
        (for-each copy-slot-if-bound!
                  '(max-speed agenda route))
        (hash-table-set! actors-table actor new-actor)
@@ -80,11 +79,11 @@
   (let* ((init-loc (off-road->on-road (get actor 'location)))
          (dest-loc (off-road->on-road dest))
          (route    (find-route init-loc dest-loc)))
-    (set-route! (++ actor) (++ route))
+    (set! (get (++ actor) 'route) (++ route))
     (link! (++ actor) (++ init-loc))))
 
 (define-method (end-route$ (++ <generic>) (actor <actor>))
-  (set-route! (++ actor) 'none)
+  (set! (get (++ actor) 'route) 'none)
   (pop-agenda-item! (++ actor))
   (link! (++ actor)
          (++ (on-road->off-road (get actor 'location)))))
