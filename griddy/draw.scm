@@ -41,15 +41,15 @@
   (with-canvas
    (with-style ((fill-color *draw/road-junction/color*))
      (rotate-in-place pi/4
-                      (get junction 'pos)
-                      (fill (regular-polygon (get junction 'pos)
+                      (ref junction 'pos)
+                      (fill (regular-polygon (ref junction 'pos)
                                              4
                                              *draw/road-junction/size*))))))
 
 
 (define (draw-road-segment segment)
-  (let* ((v-beg (get segment 'junction 'beg 'pos))
-         (v-end (get segment 'junction 'end 'pos))
+  (let* ((v-beg (ref segment 'junction 'beg 'pos))
+         (v-end (ref segment 'junction 'end 'pos))
          (v-to-edge (vec2* (get-v-ortho segment)
                            (/2 (get-width segment))))
          (p-1 (vec2+ v-beg v-to-edge))
@@ -59,7 +59,7 @@
          (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
 
     (define (draw-road-lane lane)
-      (let* ((direction (get lane 'direction))
+      (let* ((direction (ref lane 'direction))
              (v-lane-offset (get-offset lane))
              (v-segment (vec2- v-end v-beg))
              (v-arrow-pos

@@ -21,8 +21,8 @@
 (define (make-++ world world++)
   (define static-items-table
     (alist->hash-table
-     (zip-to-alist (get world 'static-items)
-                   (get world++ 'static-items))
+     (zip-to-alist (ref world 'static-items)
+                   (ref world++ 'static-items))
      eq?))
 
   (define actors-table ((@ (srfi srfi-69) make-hash-table) eq?))
@@ -40,14 +40,14 @@
 
   (define-method (++ (location <location-on-road>))
     (make <location-on-road>
-      #:pos-param (++ (get location 'pos-param))
-      #:road-lane (++ (get location 'road-lane))))
+      #:pos-param (++ (ref location 'pos-param))
+      #:road-lane (++ (ref location 'road-lane))))
 
   (define-method (++ (location <location-off-road>))
     (make <location-off-road>
-      #:pos-param (++ (get location 'pos-param))
-      #:road-segment (++ (get location 'road-segment))
-      #:road-side-direction (++ (get location 'road-side-direction))))
+      #:pos-param (++ (ref location 'pos-param))
+      #:road-segment (++ (ref location 'road-segment))
+      #:road-side-direction (++ (ref location 'road-side-direction))))
 
   (define-method (++ (actor <actor>))
     (hash-table-ref
@@ -57,7 +57,7 @@
        (define new-actor (make <actor>))
        (define (copy-slot-if-bound! slot)
          (if (slot-bound? actor slot)
-             (set! (get new-actor slot) (++ (get actor slot)))))
+             (set! (ref new-actor slot) (++ (ref actor slot)))))
        (for-each copy-slot-if-bound!
                  '(max-speed agenda route))
        (hash-table-set! actors-table actor new-actor)
@@ -67,35 +67,35 @@
 
 (define-method (do-nothing$ (++ <generic>) (actor <actor>))
   (link! (++ actor)
-         (++ (get actor 'location))))
+         (++ (ref actor 'location))))
 
 (define-method (sleep$ (++ <generic>) (actor <actor>) time)
   (if (= time 0)
     (pop-agenda-item! (++ actor))
-    (set-car! (get (++ actor) 'agenda) `(sleep-for ,(- time 1))))
+    (set-car! (ref (++ actor) 'agenda) `(sleep-for ,(- time 1))))
   (do-nothing$ ++ actor))
 
 (define-method (begin-route$ (++ <generic>) (actor <actor>) (dest <location-off-road>))
-  (let* ((init-loc (off-road->on-road (get actor 'location)))
+  (let* ((init-loc (off-road->on-road (ref actor 'location)))
          (dest-loc (off-road->on-road dest))
          (route    (find-route init-loc dest-loc)))
-    (set! (get (++ actor) 'route) (++ route))
+    (set! (ref (++ actor) 'route) (++ route))
     (link! (++ actor) (++ init-loc))))
 
 (define-method (end-route$ (++ <generic>) (actor <actor>))
-  (set! (get (++ actor) 'route) 'none)
+  (set! (ref (++ actor) 'route) 'none)
   (pop-agenda-item! (++ actor))
   (link! (++ actor)
-         (++ (on-road->off-road (get actor 'location)))))
+         (++ (on-road->off-road (ref actor 'location)))))
 
 (define-method (advance$ (++ <generic>) (actor <actor>))
   (let ((agenda-status
-         (match (get actor 'agenda)
+         (match (ref actor 'agenda)
            (()                     'nothing)
            ((agenda-step _ ...)    agenda-step)))
 
         (route-status
-         (match (get actor 'route)
+         (match (ref actor 'route)
            ('none   'none)
            ((_ ..1) 'some)
            (()      'done))))

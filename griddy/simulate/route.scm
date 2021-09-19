@@ -25,7 +25,7 @@
 (define-method (find-route (init <location-on-road>) (dest <location-on-road>))
   (define (neighbors lane)
     (filter (negate (cut eq? lane <>))
-            (get-outgoing-lanes (get lane
+            (get-outgoing-lanes (ref lane
                                      'segment
                                      'junction
                                      (match-direction lane 'end 'beg)))))
@@ -33,36 +33,36 @@
   (define (cost lane-1 lane-2)
     "actual cost of moving between neighboring nodes"
     ;; TODO: not sure about this
-    (get-length (get lane-1 'segment)))
+    (get-length (ref lane-1 'segment)))
 
   (define (distance lane-1 lane-2)
     "approximate cost of moving between nodes"
-    (l2 (get-midpoint (get lane-1 'segment))
-        (get-midpoint (get lane-2 'segment))))
+    (l2 (get-midpoint (ref lane-1 'segment))
+        (get-midpoint (ref lane-2 'segment))))
 
   (let* ((lanes (a* (make-path-finder)
-                    (get init 'road-lane)
-                    (get dest 'road-lane)
+                    (ref init 'road-lane)
+                    (ref dest 'road-lane)
                     neighbors
                     cost
                     distance))
          (lane->route-step (cut list 'turn-onto <>))
          (pos-param->route-step (cut list 'arrive-at <>)))
     (extend (map lane->route-step (cdr lanes))
-              (pos-param->route-step (get dest 'pos-param)))))
+              (pos-param->route-step (ref dest 'pos-param)))))
 
 (define (get-pos-param-delta-max actor)
-  (* (match (get actor 'location 'road-lane 'direction)
+  (* (match (ref actor 'location 'road-lane 'direction)
        ('forw +1)
        ('back -1))
-     (get actor 'max-speed)
+     (ref actor 'max-speed)
      *simulate/time-step*
-     (/ 1 (get-length (get actor 'location 'road-lane 'segment)))))
+     (/ 1 (get-length (ref actor 'location 'road-lane 'segment)))))
 
 (define (route-step/arrive-at$ ++ actor pos-param-target)
-  (let* ((lane-current        (get actor 'location 'road-lane))
-         (direction-current   (get lane-current 'direction))
-         (pos-param-current   (get actor 'location 'pos-param))
+  (let* ((lane-current        (ref actor 'location 'road-lane))
+         (direction-current   (ref lane-current 'direction))
+         (pos-param-current   (ref actor 'location 'pos-param))
          (pos-param-delta-max (get-pos-param-delta-max actor))
          (done
           (>= (abs pos-param-delta-max)
@@ -78,12 +78,12 @@
                         #:road-lane (++ lane-current)))))
 
 (define (route-step/turn-onto$ ++ actor lane-next)
-  (let* ((lane-current         (get actor 'location 'road-lane))
-         (direction-current    (get lane-current 'direction))
-         (pos-param-current    (get actor 'location 'pos-param))
+  (let* ((lane-current         (ref actor 'location 'road-lane))
+         (direction-current    (ref lane-current 'direction))
+         (pos-param-current    (ref actor 'location 'pos-param))
          (pos-param-delta-max  (get-pos-param-delta-max actor))
          (pos-param-next-naive (+ pos-param-current pos-param-delta-max))
-         (direction-next       (get lane-next 'direction))
+         (direction-next       (ref lane-next 'direction))
          (done
           (match `(,direction-current ,pos-param-next-naive)
             (('forw (? (cut >= <> 1))) #t)
@@ -106,6 +106,6 @@
 
 (define-method (advance-on-route$ (++ <generic>) (actor <actor>))
   ;; TODO: maybe don't use 'arrive-at/'turn-onto, just <lane> or <number>
-  (match (car (get actor 'route))
+  (match (car (ref actor 'route))
     (('arrive-at pos-param) (route-step/arrive-at$ ++ actor pos-param))
     (('turn-onto road-lane) (route-step/turn-onto$ ++ actor road-lane))))

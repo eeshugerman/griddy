@@ -4,7 +4,7 @@
   #:use-module (oop goops)
   #:use-module (ice-9 match)
   #:replace (set!)
-  #:export (get
+  #:export (ref
             extend
             extend!
             insert!
@@ -14,7 +14,7 @@
 (define (extend list' . items)
   (append list' items))
 
-(define (get obj . slots)
+(define (ref obj . slots)
   (define (poly-ref obj' key)
     (if (list? obj')
         (cdr (assq key obj'))
@@ -24,14 +24,14 @@
   ;;   ((slot)
   ;;    (poly-ref obj slot))
   ;;   ((but-last ..1 last)
-  ;;    (poly-ref (get obj but-last ..1) last)))
+  ;;    (poly-ref (ref obj but-last ..1) last)))
 
   (define (but-last list') (drop-right list' 1))
   (cond
    ((= 1 (length slots))
     (poly-ref obj (car slots)))
    (else
-    (poly-ref (apply get (cons obj (but-last slots)))
+    (poly-ref (apply ref (cons obj (but-last slots)))
               (last slots)))))
 
 (define (poly-set! obj key val)
@@ -40,39 +40,39 @@
       (slot-set! obj key val)))
 
 (define-syntax set!
-  (syntax-rules (get)
-    ((_ (get obj slot) val)
+  (syntax-rules (ref)
+    ((_ (ref obj slot) val)
      (poly-set! obj slot val))
-    ((_ (get obj slots ... slot ) val)
-     (poly-set! (get obj slots ...) slot val))
+    ((_ (ref obj slots ... slot ) val)
+     (poly-set! (ref obj slots ...) slot val))
     ((_ var val)
      ((@ (guile) set!) var val))))
 
 (define-syntax insert!
-  (syntax-rules (get)
-    ((_ (get obj slot) val)
+  (syntax-rules (ref)
+    ((_ (ref obj slot) val)
      (poly-set! obj
                 slot
-                (cons val (get obj slot))))
-    ((_ (get obj slots ... slot) val)
-     (poly-set! (get obj slots ...)
+                (cons val (ref obj slot))))
+    ((_ (ref obj slots ... slot) val)
+     (poly-set! (ref obj slots ...)
                 slot
-                (cons val (get obj slots ... slot))))
+                (cons val (ref obj slots ... slot))))
     ((_ list' val)
      (set! list' (cons val list')))))
 
 (define-syntax extend!
-  (syntax-rules (get)
+  (syntax-rules (ref)
     ((_ list' vals ...)
      (set! list' (extend list' vals ...)))
-    ((_ (get obj slot) vals ...)
+    ((_ (ref obj slot) vals ...)
      (poly-set! obj
                 slot
-                (extend (get obj slot) vals ...)))
-    ((_ (get obj slots ... slot) vals ...)
-     (poly-set! (get obj slots ...)
+                (extend (ref obj slot) vals ...)))
+    ((_ (ref obj slots ... slot) vals ...)
+     (poly-set! (ref obj slots ...)
                 slot
-                (extend (get obj slots ... slot) vals ...)))))
+                (extend (ref obj slots ... slot) vals ...)))))
 
 
 (define (zip-to-alist list-1 list-2)
