@@ -57,7 +57,7 @@
        ('back -1))
      (ref actor 'max-speed)
      *simulate/time-step*
-     (/ 1 (get-length (ref actor 'location 'road-lane 'segment)))))
+     (/ 1 (get-length (ref actor 'location 'road-lane)))))
 
 (define (route-step/arrive-at$ ++ actor pos-param-target)
   (let* ((lane-current        (ref actor 'location 'road-lane))

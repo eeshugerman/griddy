@@ -41,8 +41,8 @@
 
 
 (define (draw-road-segment segment)
-  (let* ((v-beg (ref segment 'junction 'beg 'pos))
-         (v-end (ref segment 'junction 'end 'pos))
+  (let* ((v-beg (get-pos segment 'beg))
+         (v-end (get-pos segment 'end))
          (v-to-edge (vec2* (get-v-ortho segment)
                            (/2 (get-width segment))))
          (p-1 (vec2+ v-beg v-to-edge))
