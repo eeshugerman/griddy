@@ -7,21 +7,14 @@
   #:use-module (chickadee math vector)
   #:use-module (chickadee math matrix)
   #:use-module (chickadee graphics path)
-  #:use-module (chickadee graphics color)
   #:use-module (griddy core)
+  #:use-module (griddy constants)
   #:use-module (griddy math)
   #:use-module (griddy util)
   #:export (draw-world))
 
 ;; TODO: Possible to use GOOPS?
 
-(define *draw/road-junction/size* 25)
-(define *draw/road-junction/color* tango-aluminium-6)
-(define *draw/road-segment/color* tango-aluminium-5)
-(define *draw/road-lane/arrow-size* 5)
-(define *draw/road-lane/color* tango-plum)
-(define *draw/actor/size* 5)
-(define *draw/actor/color* tango-light-chameleon)
 
 (define with-canvas (compose draw-canvas make-canvas))
 
@@ -39,12 +32,12 @@
 
 (define (draw-road-junction junction)
   (with-canvas
-   (with-style ((fill-color *draw/road-junction/color*))
+   (with-style ((fill-color *road-junction/color*))
      (rotate-in-place pi/4
                       (ref junction 'pos)
                       (fill (regular-polygon (ref junction 'pos)
                                              4
-                                             *draw/road-junction/size*))))))
+                                             *road-junction/size*))))))
 
 
 (define (draw-road-segment segment)
@@ -74,20 +67,20 @@
               (rotate-in-place (* -1 (- (angle-of v-lane) pi/2))
                                v-arrow-pos
                                (fill (regular-polygon v-arrow-pos 3
-                                                      *draw/road-lane/arrow-size*))))
+                                                      *road-lane/arrow-size*))))
              (line-painter
               (stroke (line (vec2+ v-beg v-lane-offset)
                             (vec2+ v-end v-lane-offset)))))
-        (with-style ((stroke-color *draw/road-lane/color*)
-                     (fill-color *draw/road-lane/color*))
+        (with-style ((stroke-color *road-lane/color*)
+                     (fill-color *road-lane/color*))
           (superimpose line-painter arrow-painter))))
 
     (let* ((lane-painters (map draw-road-lane (get-lanes segment))))
       (with-canvas (apply superimpose road-painter (reverse lane-painters))))))
 
 (define (draw-actor actor)
-  (with-canvas (with-style ((fill-color *draw/actor/color*))
-                 (fill (circle (get-pos actor) *draw/actor/size*)))))
+  (with-canvas (with-style ((fill-color *actor/color*))
+                 (fill (circle (get-pos actor) *actor/size*)))))
 
 (define (draw-world world)
   (for-each draw-road-segment (get-road-segments world))

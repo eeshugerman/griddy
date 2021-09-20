@@ -7,6 +7,7 @@
   #:use-module (oop goops)
   #:use-module (chickadee math vector)
   #:use-module (griddy util)
+  #:use-module (griddy constants)
   #:use-module (griddy math)
   #:duplicates (merge-generics)
   #:export (<actor>
