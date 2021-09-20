@@ -34,7 +34,7 @@
   (syntax-rules (ref)
     ((_ (ref obj slot) val)
      (poly-set! obj slot val))
-    ((_ (ref obj slots ... slot ) val)
+    ((_ (ref obj slots ... slot) val)
      (poly-set! (ref obj slots ...) slot val))
     ((_ var val)
      ((@ (guile) set!) var val))))

@@ -138,11 +138,10 @@
                  (back . 0))))
 
 (define-method (initialize (self <road-segment>) initargs)
-  ;; https://lists.gnu.org/archive/html/bug-guile/2018-09/msg00032.html
+  (next-method)
   (define alist-slots '(junction lanes lane-count))
   (define (make-mutable! slot)
     (set! (ref self slot) (copy-tree (ref self slot))))
-  (next-method)
   (for-each make-mutable! alist-slots))
 
 (define-method (get-v (segment <road-segment>))
@@ -180,16 +179,11 @@
   (match `(,direction
            ,(ref segment 'lane-count 'back)
            ,(ref segment 'lane-count 'forw))
-    (((or 'forw 'back) 0 0)
-     (throw 'road-has-no-lanes))
-    (('back 0 _)
-     (first (get-lanes segment 'forw)))
-    (('forw _ 0)
-     (last (get-lanes segment 'back)))
-    (('forw _ _)
-     (last (get-lanes segment 'forw)))
-    (('back _ _)
-     (last (get-lanes segment 'back)))))
+    ((_     0 0) (throw 'road-has-no-lanes))
+    (('back 0 _) (first (get-lanes segment 'forw)))
+    (('forw _ 0) (last (get-lanes segment 'back)))
+    (('forw _ _) (last (get-lanes segment 'forw)))
+    (('back _ _) (last (get-lanes segment 'back)))))
 
 (define-method (get-width (segment <road-segment>))
   (* (+ 1 (/ *core/road-segment/wiggle-room-%* 100))
@@ -336,11 +330,11 @@
 
 (define-method (add! (world <world>) (segment <road-segment>))
   (cond
-   [(or (null? (ref segment 'junction 'beg))
+   ((or (null? (ref segment 'junction 'beg))
         (null? (ref segment 'junction 'end)))
-    (throw 'unlinked-road-segment)]
-   [(and (null? (ref segment 'lanes 'forw))
+    (throw 'unlinked-road-segment))
+   ((and (null? (ref segment 'lanes 'forw))
          (null? (ref segment 'lanes 'back)))
-    (throw 'road-segment-has-no-lanes)]
-   [else
-    (next-method)]))
+    (throw 'road-segment-has-no-lanes))
+   (else
+    (next-method))))
