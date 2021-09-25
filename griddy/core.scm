@@ -17,6 +17,7 @@
             <point-like>
             <road-junction>
             <road-lane>
+            <road-lane/segment>
             <road-segment>
             <route>
             <static>
@@ -55,22 +56,25 @@
 (define <vec2> (class-of (vec2 0 0)))
 
 (define-class <road-lane> (<static>)
+  (actors
+   #:init-thunk list))
+
+(define-class <road-lane/segment> (<road-lane>)
   segment
   (direction  ;; 'forw or 'back, relative to segment
    #:init-keyword #:direction)
   rank ;; 0..
-  (actors
-   #:init-thunk list))
+  )
 
 ;; might want to refine these at some point
 ;; but for now just pass through to segment
-(define-method (get-length (lane <road-lane>))
+(define-method (get-length (lane <road-lane/segment>))
   (get-length (ref lane 'segment)))
 
-(define-method (get-pos (lane <road-lane>) (which <symbol>))
+(define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
   (get-pos (ref lane 'segment) which))
 
-(define-method (get-offset (lane <road-lane>))
+(define-method (get-offset (lane <road-lane/segment>))
   (let* ((segment         (ref lane 'segment))
          (lane-count-from-edge
           (match (ref lane 'direction)
@@ -195,7 +199,7 @@
 (define-method (get-lanes (segment <road-segment>) (direction <symbol>))
   (ref segment 'lanes direction))
 
-(define-method (add-lane-set-rank! (segment <road-segment>) (lane <road-lane>))
+(define-method (add-lane-set-rank! (segment <road-segment>) (lane <road-lane/segment>))
   (let* ((direction (ref lane 'direction))
          (rank      (ref segment 'lane-count direction)))
     (set! (ref lane 'rank) rank)
@@ -329,7 +333,7 @@
 
 
 ;; -----------------------------------------------------------------------------
-(define-method (link! (lane <road-lane>) (segment <road-segment>))
+(define-method (link! (lane <road-lane/segment>) (segment <road-segment>))
   (if (slot-bound? lane 'segment)
       (throw 'lane-already-linked lane segment))
   (set! (ref lane 'segment) segment)

@@ -21,15 +21,15 @@
          (junction-3 (make <road-junction> #:x 400 #:y 250)) ;; mid right
 
          (segment-1 (make <road-segment>)) ;; vertical
-         (lane-1-1 (make <road-lane> #:direction 'forw)) ;; downward
+         (lane-1-1 (make <road-lane/segment> #:direction 'forw)) ;; downward
 
          (segment-2 (make <road-segment>)) ;; horizontal
-         (lane-2-1 (make <road-lane> #:direction 'back)) ;; leftward
-         (lane-2-2 (make <road-lane> #:direction 'forw)) ;; rightward
+         (lane-2-1 (make <road-lane/segment> #:direction 'back)) ;; leftward
+         (lane-2-2 (make <road-lane/segment> #:direction 'forw)) ;; rightward
 
          (segment-3 (make <road-segment>)) ;; diagonal
-         (lane-3-1 (make <road-lane> #:direction 'back))
-         (lane-3-2 (make <road-lane> #:direction 'forw)))
+         (lane-3-1 (make <road-lane/segment> #:direction 'back))
+         (lane-3-2 (make <road-lane/segment> #:direction 'forw)))
 
     (link! junction-1 segment-1 junction-2)
     (link! junction-1 segment-2 junction-3)
