@@ -11,8 +11,8 @@
   #:use-module (griddy math)
   #:duplicates (merge-generics)
   #:export (<actor>
-            <location-off-road>
-            <location-on-road>
+            <location/off-road>
+            <location/on-road>
             <location>
             <point-like>
             <road-junction>
@@ -229,11 +229,11 @@
    #:init-value 0.0
    #:init-keyword #:pos-param))
 
-(define-class <location-on-road> (<location>)
+(define-class <location/on-road> (<location>)
   (road-lane
    #:init-keyword #:road-lane))
 
-(define-class <location-off-road> (<location>)
+(define-class <location/off-road> (<location>)
   (road-segment
    #:init-keyword #:road-segment)
   (road-side-direction
@@ -244,7 +244,7 @@
               (vec2* (vec2- v-end v-beg) pos-param)
               v-offset))
 
-(define-method (get-pos (loc <location-off-road>))
+(define-method (get-pos (loc <location/off-road>))
   (let* ((segment  (ref loc 'road-segment))
          (v-beg    (get-pos segment 'beg))
          (v-end    (get-pos segment 'end))
@@ -258,21 +258,21 @@
          (pos-param (ref loc 'pos-param)))
     (get-pos-helper v-beg v-end v-offset pos-param)))
 
-(define-method (get-pos (loc <location-on-road>))
+(define-method (get-pos (loc <location/on-road>))
   (let ((v-beg     (get-pos (ref loc 'road-lane) 'beg))
         (v-end     (get-pos (ref loc 'road-lane) 'end))
         (v-offset  (get-offset (ref loc 'road-lane)))
         (pos-param (ref loc 'pos-param)))
     (get-pos-helper v-beg v-end v-offset pos-param)))
 
-(define-method (on-road->off-road (loc <location-on-road>))
-  (make <location-off-road>
+(define-method (on-road->off-road (loc <location/on-road>))
+  (make <location/off-road>
     #:pos-param           (ref loc 'pos-param)
     #:road-segment        (ref loc 'road-lane 'segment)
     #:road-side-direction (ref loc 'road-lane 'direction)))
 
-(define-method (off-road->on-road (loc <location-off-road>))
-  (make <location-on-road>
+(define-method (off-road->on-road (loc <location/off-road>))
+  (make <location/on-road>
     #:pos-param (ref loc 'pos-param)
     #:road-lane (get-outer-lane (ref loc 'road-segment)
                                 (ref loc 'road-side-direction))))
@@ -343,11 +343,11 @@
   (set! (ref segment 'junction 'beg) junction-1)
   (set! (ref segment 'junction 'end) junction-2))
 
-(define-method (link! (actor <actor>) (loc <location-off-road>))
+(define-method (link! (actor <actor>) (loc <location/off-road>))
   (set! (ref actor 'location) loc)
   (insert! (ref loc 'road-segment 'actors) actor))
 
-(define-method (link! (actor <actor>) (loc <location-on-road>))
+(define-method (link! (actor <actor>) (loc <location/on-road>))
   (set! (ref actor 'location) loc)
   (insert! (ref loc 'road-lane 'actors) actor))
 

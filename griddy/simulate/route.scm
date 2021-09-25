@@ -13,8 +13,8 @@
 ;;             next-step)
 ;;   #:re-export (<actor>
 ;;                <location>
-;;                <location-on-road>
-;;                <location-off-road>))
+;;                <location/on-road>
+;;                <location/off-road>))
 
 
 ;; workaround for goops/module funkiness
@@ -22,7 +22,7 @@
              (griddy math))
 
 ;; assumes all road have unbroken medians
-(define-method (find-route (init <location-on-road>) (dest <location-on-road>))
+(define-method (find-route (init <location/on-road>) (dest <location/on-road>))
   (define (neighbors lane)
     (filter (negate (cut eq? lane <>))
             (get-outgoing-lanes (ref lane
@@ -73,7 +73,7 @@
               (+ pos-param-current pos-param-delta-max))))
     (when done
       (route-pop! (++ actor)))
-    (link! (++ actor) (make <location-on-road>
+    (link! (++ actor) (make <location/on-road>
                         #:pos-param (++ pos-param-next)
                         #:road-lane (++ lane-current)))))
 
@@ -100,7 +100,7 @@
             ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
     (when done
       (route-pop! (++ actor)))
-    (link! (++ actor) (make <location-on-road>
+    (link! (++ actor) (make <location/on-road>
                         #:road-lane (++ (if done lane-next lane-current))
                         #:pos-param (++ pos-param-next)))))
 

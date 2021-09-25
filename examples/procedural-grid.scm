@@ -82,7 +82,7 @@
                    (pos-param   ((if (random-bool) + -)
                                  1/2
                                  (* 1/4 (random-real)))))
-              (make <location-off-road>
+              (make <location/off-road>
                 #:road-segment segment
                 #:road-side-direction side
                 #:pos-param pos-param)))))

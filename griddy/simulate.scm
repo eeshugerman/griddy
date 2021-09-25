@@ -43,13 +43,13 @@
   (define-method (++ (item <static>))
     (hash-table-ref static-items-table item))
 
-  (define-method (++ (location <location-on-road>))
-    (make <location-on-road>
+  (define-method (++ (location <location/on-road>))
+    (make <location/on-road>
       #:pos-param (++ (ref location 'pos-param))
       #:road-lane (++ (ref location 'road-lane))))
 
-  (define-method (++ (location <location-off-road>))
-    (make <location-off-road>
+  (define-method (++ (location <location/off-road>))
+    (make <location/off-road>
       #:pos-param (++ (ref location 'pos-param))
       #:road-segment (++ (ref location 'road-segment))
       #:road-side-direction (++ (ref location 'road-side-direction))))
@@ -80,7 +80,7 @@
     (set-car! (ref (++ actor) 'agenda) `(sleep-for ,(- time 1))))
   (do-nothing$ ++ actor))
 
-(define-method (begin-route$ (++ <generic>) (actor <actor>) (dest <location-off-road>))
+(define-method (begin-route$ (++ <generic>) (actor <actor>) (dest <location/off-road>))
   (let* ((init-loc (off-road->on-road (ref actor 'location)))
          (dest-loc (off-road->on-road dest))
          (route    (find-route init-loc dest-loc)))
