@@ -53,24 +53,24 @@
 
     (define (draw-road-lane lane)
       (let* ((direction (ref lane 'direction))
-             (v-lane-offset (get-offset lane))
-             (v-segment (vec2- v-end v-beg))
+             (v-lane-beg (get-pos lane 'beg))
+             (v-lane-end (get-pos lane 'end))
+             (v-lane     (get-v lane)) ;; does not a
              (v-arrow-pos
-              (vec2+/many v-beg
-                          (vec2* v-segment 1/2)
-                          v-lane-offset))
-             (v-lane
-              (vec2* v-segment (match-direction lane +1 -1)))
+              (vec2+/many v-lane-beg
+                          (vec2* v-lane 1/2)))
+
+             (arrow-angle (angle-of (vec2* v-lane
+                                           (match-direction lane +1 -1))))
              (arrow-painter
               ;; `rotate' rotates clockwise (?!), triangle starts
               ;; pointing upwards
-              (rotate-in-place (* -1 (- (angle-of v-lane) pi/2))
+              (rotate-in-place (* -1 (- arrow-angle pi/2))
                                v-arrow-pos
                                (fill (regular-polygon v-arrow-pos 3
                                                       *road-lane/arrow-size*))))
              (line-painter
-              (stroke (line (vec2+ v-beg v-lane-offset)
-                            (vec2+ v-end v-lane-offset)))))
+              (stroke (line v-lane-beg v-lane-end ))))
         (with-style ((stroke-color *road-lane/color*)
                      (fill-color *road-lane/color*))
           (superimpose line-painter arrow-painter))))

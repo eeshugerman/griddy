@@ -76,7 +76,8 @@
   (get-length (ref lane 'segment)))
 
 (define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
-  (get-pos (ref lane 'segment) which))
+  (vec2+ (get-pos (ref lane 'segment) which)
+         (get-offset lane)))
 
 (define-method (get-offset (lane <road-lane/segment>))
   (let* ((segment         (ref lane 'segment))
@@ -172,6 +173,13 @@
   (vec2- (get-pos segment 'end)
          (get-pos segment 'beg)))
 
+(define-method (get-v (lane <road-lane/segment>))
+  ;; would it simplify every thing if this accounted for direction?
+  ;; would be a big change...
+  ;; see also: (get-pos lane which)
+  (vec2- (get-pos lane 'end)
+         (get-pos lane 'beg)))
+
 (define-method (get-v-tangent (segment <road-segment>))
   ;; can't use `get-v' because recursive loop
   (vec2-normalize (vec2- (ref segment 'junction 'end 'pos)
@@ -264,14 +272,13 @@
                              (get-width (ref loc 'road-segment))
                              (+ 1 (* 2 (/ *road-segment/wiggle-room-%* 100))))))
          (pos-param (ref loc 'pos-param)))
-    (get-pos-helper v-beg v-end v-offset pos-param)))
+    (vec2+/many v-beg  v-offset (vec2* (get-v segment) pos-param))))
 
 (define-method (get-pos (loc <location/on-road>))
-  (let ((v-beg     (get-pos (ref loc 'road-lane) 'beg))
-        (v-end     (get-pos (ref loc 'road-lane) 'end))
-        (v-offset  (get-offset (ref loc 'road-lane)))
-        (pos-param (ref loc 'pos-param)))
-    (get-pos-helper v-beg v-end v-offset pos-param)))
+  (let* ((lane      (ref loc 'road-lane))
+         (v-beg     (get-pos lane 'beg))
+         (pos-param (ref loc 'pos-param)))
+    (vec2+/many v-beg (vec2* (get-v lane) pos-param))))
 
 (define-method (on-road->off-road (loc <location/on-road>))
   (make <location/off-road>
