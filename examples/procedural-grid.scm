@@ -68,6 +68,8 @@
                  (link! lane segment)
                  (add! world lane)))))))
 
+    ;; (array-for-each connect-all-lanes! junctions)
+
     world))
 
 (define (add-actors! world)

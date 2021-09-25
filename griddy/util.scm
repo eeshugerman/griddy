@@ -8,7 +8,10 @@
             match-direction
             extend
             extend!
-            insert!))
+            insert!
+            neq?))
+
+(define neq? (negate eq?))
 
 (define (extend list' . items)
   (append list' items))

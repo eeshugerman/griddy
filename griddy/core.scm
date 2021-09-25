@@ -18,6 +18,7 @@
             <road-junction>
             <road-lane>
             <road-lane/segment>
+            <road-lane/junction>
             <road-segment>
             <route>
             <static>
@@ -64,6 +65,9 @@
   (direction  ;; 'forw or 'back, relative to segment
    #:init-keyword #:direction)
   rank ;; 0..
+  )
+
+(define-class <road-lane/junction> (<road-lane>)
   )
 
 ;; might want to refine these at some point
@@ -331,6 +335,31 @@
   (append (fold into-actors (list) (get-road-lanes world))
           (fold into-actors (list) (get-road-segments world))))
 
+;; -----------------------------------------------------------------------------
+(define-method (get-junction-lanes (lane <road-lane/segment>))
+  )
+
+(define-method (get-segment-lane (lane <road-lane/junction>))
+  )
+
+(define-method (connect! (in-lane <road-lane/segment>)
+                         (out-lane <road-lane/segment>))
+  (if (neq? (ref in-lane  'segment 'junction 'end)
+            (ref out-lane 'segment 'junction 'beg))
+      (throw 'lanes-do-not-meet))
+  ;; do stuff
+  )
+
+(define-method (connect-all-lanes! (junction <road-junction>))
+  (let* ((in-lanes  (get-incoming-lanes junction))
+         (out-lanes (get-outgoing-lanes junction)))
+    (for-each
+     (lambda (in-lane)
+       (for-each
+        (lambda (out-lane)
+          (connect! in-lane out-lane))
+        (filter (cut neq? in-lane <>) out-lanes)))
+     in-lanes)))
 
 ;; -----------------------------------------------------------------------------
 (define-method (link! (lane <road-lane/segment>) (segment <road-segment>))

@@ -24,7 +24,7 @@
 ;; assumes all road have unbroken medians
 (define-method (find-route (init <location/on-road>) (dest <location/on-road>))
   (define (neighbors lane)
-    (filter (negate (cut eq? lane <>))
+    (filter (cut neq? lane <>)
             (get-outgoing-lanes (ref lane
                                      'segment
                                      'junction
