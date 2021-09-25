@@ -49,9 +49,6 @@
 (define-syntax-rule (set! args ...)
   ((@ (griddy util) set!) args ...))
 
-(define *core/road-lane/width* 10)
-(define *core/road-segment/wiggle-room-%* 5)
-
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
 
@@ -87,15 +84,15 @@
          (v-ortho         (get-v-ortho segment))
 
          (v-segment-edge  (vec2* v-ortho
-                                 (* *core/road-lane/width*
+                                 (* *road-lane/width*
                                     (get-lane-count segment)
                                     -1/2)))
          (v-lane-edge     (vec2+ v-segment-edge
                                  (vec2* v-ortho
-                                        (* *core/road-lane/width*
+                                        (* *road-lane/width*
                                            lane-count-from-edge))))
          (v-lane-center   (vec2+ v-lane-edge
-                                 (vec2* v-ortho (* *core/road-lane/width*
+                                 (vec2* v-ortho (* *road-lane/width*
                                                    1/2)))))
     v-lane-center))
 
@@ -111,8 +108,15 @@
   (next-method))
 
 (define-method (get-radius (junction <road-junction>))
-  ;; TODO: calculate based on number of lanes?
-  (/2 *road-junction/size*))
+  "<air-quote>radius</air-quote>"
+  (let* ((max-segment-lane-count
+          (apply max (map get-lane-count (ref junction 'segments))))
+         (wiggle-factor
+          (+ 1 (/ *road-segment/wiggle-room-%* 100))))
+    (* wiggle-factor
+       1/2
+       max-segment-lane-count
+       *road-lane/width*)))
 
 (define-method (get-lanes (junction <road-junction>))
   (fold (lambda (segment lanes)
@@ -209,8 +213,8 @@
     (('back _ _) (last (get-lanes segment 'back)))))
 
 (define-method (get-width (segment <road-segment>))
-  (* (+ 1 (/ *core/road-segment/wiggle-room-%* 100))
-     *core/road-lane/width*
+  (* (+ 1 (/ *road-segment/wiggle-room-%* 100))
+     *road-lane/width*
      (get-lane-count segment)))
 
 (define-method (get-length (segment <road-segment>))
@@ -250,7 +254,7 @@
                                ('back -1))
                              1/2
                              (get-width (ref loc 'road-segment))
-                             (+ 1 (* 2 (/ *core/road-segment/wiggle-room-%* 100))))))
+                             (+ 1 (* 2 (/ *road-segment/wiggle-room-%* 100))))))
          (pos-param (ref loc 'pos-param)))
     (get-pos-helper v-beg v-end v-offset pos-param)))
 

@@ -18,7 +18,7 @@
   *road-junction/color*        tango-aluminium-6
 
   *road-segment/color*         tango-aluminium-5
-  *road-segment/wiggle-room-%* 5
+  *road-segment/wiggle-room-%* 20
 
   *road-lane/arrow-size*       5
   *road-lane/color*            tango-plum

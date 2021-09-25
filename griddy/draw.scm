@@ -84,5 +84,5 @@
 
 (define (draw-world world)
   (for-each draw-road-segment (get-road-segments world))
-  (for-each draw-road-junction (get-road-junctions world))
+  ;; (for-each draw-road-junction (get-road-junctions world))
   (for-each draw-actor (get-actors world)))
