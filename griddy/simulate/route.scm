@@ -52,10 +52,7 @@
               (pos-param->route-step (ref dest 'pos-param)))))
 
 (define (get-pos-param-delta-max actor)
-  (* (match (ref actor 'location 'road-lane 'direction)
-       ('forw +1)
-       ('back -1))
-     (ref actor 'max-speed)
+  (* (ref actor 'max-speed)
      *simulate/time-step*
      (/ 1 (get-length (ref actor 'location 'road-lane)))))
 
@@ -64,13 +61,13 @@
          (direction-current   (ref lane-current 'direction))
          (pos-param-current   (ref actor 'location 'pos-param))
          (pos-param-delta-max (get-pos-param-delta-max actor))
-         (done
-          (>= (abs pos-param-delta-max)
-              (abs (- pos-param-target pos-param-current))))
-         (pos-param-next
-          (if done
-              pos-param-target
-              (+ pos-param-current pos-param-delta-max))))
+         (done                (>= pos-param-delta-max
+                                  (- pos-param-target
+                                     pos-param-current)))
+         (pos-param-next      (if done
+                                  pos-param-target
+                                  (+ pos-param-current
+                                     pos-param-delta-max))))
     (when done
       (route-pop! (++ actor)))
     (link! (++ actor) (make <location/on-road>
@@ -79,25 +76,14 @@
 
 (define (route-step/turn-onto$ ++ actor lane-next)
   (let* ((lane-current         (ref actor 'location 'road-lane))
-         (direction-current    (ref lane-current 'direction))
          (pos-param-current    (ref actor 'location 'pos-param))
          (pos-param-delta-max  (get-pos-param-delta-max actor))
          (pos-param-next-naive (+ pos-param-current pos-param-delta-max))
-         (direction-next       (ref lane-next 'direction))
-         (done
-          (match `(,direction-current ,pos-param-next-naive)
-            (('forw (? (cut >= <> 1))) #t)
-            (('back (? (cut <= <> 0))) #t)
-            (_ #f)))
-         (pos-param-next
-          (match `(,done ,direction-current ,direction-next)
-            ((#f _ _) pos-param-next-naive)
-            ;; TODO: using `pos-param-next-naive' here assumes
-            ;;       (= (get-length lane-current) (get-length lane-next))
-            ((#t 'forw 'forw) (- pos-param-next-naive 1))
-            ((#t 'forw 'back) (- 1 (- pos-param-next-naive 1)))
-            ((#t 'back 'forw) (- pos-param-next-naive))
-            ((#t 'back 'back) (- 1 (- pos-param-next-naive))))))
+         ;; here, `done' means done with lane / time to turn
+         (done                 (>= pos-param-next-naive 1))
+         (pos-param-next       (if done
+                                   (- pos-param-next-naive 1)
+                                   pos-param-next-naive)))
     (when done
       (route-pop! (++ actor)))
     (link! (++ actor) (make <location/on-road>

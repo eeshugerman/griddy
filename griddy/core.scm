@@ -64,8 +64,7 @@
   segment
   (direction  ;; 'forw or 'back, relative to segment
    #:init-keyword #:direction)
-  rank ;; 0..
-  )
+  rank) ;; 0..
 
 (define-class <road-lane/junction> (<road-lane>)
   )
@@ -76,7 +75,10 @@
   (get-length (ref lane 'segment)))
 
 (define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
-  (vec2+ (get-pos (ref lane 'segment) which)
+  (vec2+ (get-pos (ref lane 'segment)
+                  (match-direction lane which (flip which))
+                  ;; which
+                  )
          (get-offset lane)))
 
 (define-method (get-offset (lane <road-lane/segment>))
@@ -174,9 +176,6 @@
          (get-pos segment 'beg)))
 
 (define-method (get-v (lane <road-lane/segment>))
-  ;; would it simplify every thing if this accounted for direction?
-  ;; would be a big change...
-  ;; see also: (get-pos lane which)
   (vec2- (get-pos lane 'end)
          (get-pos lane 'beg)))
 
@@ -255,15 +254,9 @@
   (road-side-direction
    #:init-keyword #:road-side-direction))
 
-(define (get-pos-helper v-beg v-end v-offset pos-param)
-  (vec2+/many v-beg
-              (vec2* (vec2- v-end v-beg) pos-param)
-              v-offset))
-
 (define-method (get-pos (loc <location/off-road>))
   (let* ((segment  (ref loc 'road-segment))
          (v-beg    (get-pos segment 'beg))
-         (v-end    (get-pos segment 'end))
          (v-offset (vec2* (get-v-ortho segment)  ;; magnitude is arbitrary
                           (* (match (ref loc 'road-side-direction)
                                ('forw +1)
@@ -278,19 +271,25 @@
   (let* ((lane      (ref loc 'road-lane))
          (v-beg     (get-pos lane 'beg))
          (pos-param (ref loc 'pos-param)))
-    (vec2+/many v-beg (vec2* (get-v lane) pos-param))))
+    (vec2+ v-beg (vec2* (get-v lane) pos-param))))
 
 (define-method (on-road->off-road (loc <location/on-road>))
   (make <location/off-road>
-    #:pos-param           (ref loc 'pos-param)
+    #:pos-param           (match-direction (ref loc 'road-lane)
+                            (ref loc 'pos-param)
+                            (- 1 (ref loc 'pos-param)))
     #:road-segment        (ref loc 'road-lane 'segment)
     #:road-side-direction (ref loc 'road-lane 'direction)))
 
 (define-method (off-road->on-road (loc <location/off-road>))
-  (make <location/on-road>
-    #:pos-param (ref loc 'pos-param)
-    #:road-lane (get-outer-lane (ref loc 'road-segment)
-                                (ref loc 'road-side-direction))))
+  (let* ((road-lane (get-outer-lane (ref loc 'road-segment)
+                                    (ref loc 'road-side-direction)))
+         (pos-param (match-direction road-lane
+                      (ref loc 'pos-param)
+                      (- 1 (ref loc 'pos-param)))))
+    (make <location/on-road>
+      #:pos-param pos-param
+      #:road-lane road-lane)))
 
 (define-class <actor> ()
   location

@@ -52,25 +52,23 @@
          (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
 
     (define (draw-road-lane lane)
-      (let* ((direction (ref lane 'direction))
-             (v-lane-beg (get-pos lane 'beg))
-             (v-lane-end (get-pos lane 'end))
-             (v-lane     (get-v lane)) ;; does not a
-             (v-arrow-pos
-              (vec2+/many v-lane-beg
-                          (vec2* v-lane 1/2)))
+      (let* ((direction   (ref lane 'direction))
+             (v-lane-beg  (get-pos lane 'beg))
+             (v-lane-end  (get-pos lane 'end))
+             (v-lane      (get-v lane))
+             (v-arrow-pos (vec2+ v-lane-beg (vec2* v-lane 1/2)))
 
-             (arrow-angle (angle-of (vec2* v-lane
-                                           (match-direction lane +1 -1))))
+             (arrow-angle (angle-of v-lane))
              (arrow-painter
-              ;; `rotate' rotates clockwise (?!), triangle starts
-              ;; pointing upwards
+              ;; `rotate' rotates clockwise (?!), triangle initially
+              ;; points upward
               (rotate-in-place (* -1 (- arrow-angle pi/2))
                                v-arrow-pos
                                (fill (regular-polygon v-arrow-pos 3
                                                       *road-lane/arrow-size*))))
              (line-painter
               (stroke (line v-lane-beg v-lane-end ))))
+
         (with-style ((stroke-color *road-lane/color*)
                      (fill-color *road-lane/color*))
           (superimpose line-painter arrow-painter))))
@@ -79,6 +77,7 @@
       (with-canvas (apply superimpose road-painter (reverse lane-painters))))))
 
 (define (draw-actor actor)
+  (ref actor 'location 'pos-param)
   (with-canvas (with-style ((fill-color *actor/color*))
                  (fill (circle (get-pos actor) *actor/size*)))))
 

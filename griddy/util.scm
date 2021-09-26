@@ -8,10 +8,18 @@
             match-direction
             extend
             extend!
+            flip
             insert!
             neq?))
 
 (define neq? (negate eq?))
+
+(define (flip x)
+  (case x
+    ((forw) 'back)
+    ((back) 'forw)
+    ((beg)  'end)
+    ((end)  'beg)))
 
 (define (extend list' . items)
   (append list' items))
