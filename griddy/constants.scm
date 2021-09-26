@@ -28,7 +28,7 @@
 
   *road-lane/arrow-size*       5
   *road-lane/color*            tango-plum
-  *road-lane/width*            10
+  *road-lane/width*            15
 
   *actor/size*                 5
   *actor/color*                tango-light-chameleon

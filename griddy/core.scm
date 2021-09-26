@@ -198,7 +198,8 @@
                          (ref segment 'junction 'beg 'pos))))
 
 (define-method (get-tangent-vec (lane <road-lane/segment>))
-  (get-tangent-vec (ref lane 'segment)))
+  (vec2* (get-tangent-vec (ref lane 'segment))
+         (match-direction lane +1 -1)))
 
 (define-method (get-ortho-vec (segment <road-segment>))
   (vec2-rotate (get-tangent-vec segment) pi/2))
@@ -381,12 +382,13 @@
       (throw 'lanes-do-not-meet))
   (let* ((junction      (get-junction in-lane 'in))
          (junction-lane (make <road-lane/junction>))
-         (delta         (* (get-radius junction)
+         (delta         (* 2
+                           (get-radius junction)
                            (/ *road-segment/wiggle-room-%* 100)))
          (p0            (get-pos in-lane  'end))
          (p3            (get-pos out-lane 'beg))
          (p1            (vec2+ p0 (vec2* (get-tangent-vec in-lane)  delta)))
-         (p2            (vec2- p0 (vec2* (get-tangent-vec out-lane) delta)))
+         (p2            (vec2- p3 (vec2* (get-tangent-vec out-lane) delta)))
          (curve         (make-bezier-curve p0 p1 p2 p3)))
 
     (set! (ref junction-lane 'curve)
