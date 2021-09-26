@@ -11,7 +11,14 @@
          (let ((name (car defs))
                (val (cadr defs)))
            (loop (cons `(define-public ,name ,val) form)
-                 (cddr defs)))))))
+                 (cddr defs))))
+     ;; (match defs
+     ;;   (()
+     ;;    form)
+     ;;   ((name val defs-rest ...)
+     ;;    (loop (cons `(define-public ,name ,val) form)
+     ;;          defs-rest)))
+     )))
 
 (define-constants
   *road-junction/color*        tango-aluminium-2

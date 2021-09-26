@@ -1,6 +1,7 @@
 (define-module (griddy util)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
+  #:use-module (srfi srfi-69)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
   #:replace (set!)
@@ -24,11 +25,16 @@
 (define (extend list' . items)
   (append list' items))
 
+(define (poly-ref obj key)
+  (cond
+   ((list? obj)
+    (assq-ref obj key))
+   ((hash-table? obj)
+    (hash-table-ref obj key))
+   (else
+    (slot-ref obj key))))
+
 (define (ref obj . slots)
-  (define (poly-ref obj' key)
-    (if (list? obj')
-        (assq-ref obj' key)
-        (slot-ref obj' key)))
   (match slots
     ((slot)
      (poly-ref obj slot))
@@ -37,9 +43,13 @@
                slot))))
 
 (define (poly-set! obj key val)
-  (if (list? obj)
-      (assoc-set! obj key val)
-      (slot-set! obj key val)))
+  (cond
+   ((list? obj)
+    (assoc-set! obj key val))
+   ((hash-table? obj)
+    (hash-table-set! obj key val))
+   (else
+    (slot-set! obj key val))))
 
 (define-syntax set!
   (syntax-rules (ref)

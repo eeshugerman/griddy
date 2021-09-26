@@ -3,9 +3,11 @@
                                         first
                                         last))
   #:use-module (srfi srfi-26)
+  #:use-module (srfi srfi-69)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (chickadee math vector)
+  #:use-module (chickadee math bezier)
   #:use-module (griddy util)
   #:use-module (griddy constants)
   #:use-module (griddy math)
@@ -26,6 +28,7 @@
             add!
             agenda-pop!
             agenda-push!
+            connect-all-lanes!
             get-actors
             get-incoming-lanes
             get-lanes
@@ -68,7 +71,11 @@
   rank) ;; 0..
 
 (define-class <road-lane/junction> (<road-lane>)
-  )
+  ;; junction
+  (segment
+   #:init-form `((beg . ())
+                 (end . ())))
+  curve)
 
 ;; might want to refine these at some point
 ;; but for now just pass through to segment
@@ -106,11 +113,15 @@
                                                    1/2)))))
     v-lane-center))
 
+(define make-hash-table (@ (srfi srfi-69) make-hash-table))
 
 (define-class <road-junction> (<static>)
   pos ;; vec2
   (segments
-   #:init-thunk list))
+   #:init-thunk list)
+  (lane-map
+   #:init-form `((inputs  . ,(make-hash-table eq?))
+                 (outputs . ,(make-hash-table eq?)))))
 
 (define-method (initialize (self <road-junction>) initargs)
   (set! (ref self 'pos) (vec2 (get-keyword #:x initargs)
@@ -179,9 +190,12 @@
          (get-pos lane 'beg)))
 
 (define-method (get-tangent-vec (segment <road-segment>))
-  ;; can't use `get-v' because recursive loop
+  ; can't use `get-vec' because recursive loop
   (vec2-normalize (vec2- (ref segment 'junction 'end 'pos)
                          (ref segment 'junction 'beg 'pos))))
+
+(define-method (get-tangent-vec (lane <road-lane/segment>))
+  (get-tangent-vec (ref lane 'segment)))
 
 (define-method (get-ortho-vec (segment <road-segment>))
   (vec2-rotate (get-tangent-vec segment) pi/2))
@@ -349,11 +363,39 @@
 
 (define-method (connect! (in-lane <road-lane/segment>)
                          (out-lane <road-lane/segment>))
-  (if (neq? (ref in-lane  'segment 'junction 'end)
-            (ref out-lane 'segment 'junction 'beg))
+
+  (define (get-junction lane lane-type)
+    (define which
+      (match `(,lane-type ,(ref lane 'direction))
+        (('in  'forw) 'end)
+        (('in  'back) 'beg)
+        (('out 'forw) 'beg)
+        (('out 'back) 'end)))
+    (ref lane 'segment 'junction which))
+
+  (if (neq? (get-junction in-lane  'in)
+            (get-junction out-lane 'out))
       (throw 'lanes-do-not-meet))
-  ;; do stuff
-  )
+  (let* ((junction      (get-junction in-lane 'in))
+         (junction-lane (make <road-lane/junction>))
+         (delta         (* (get-radius junction)
+                           (/ *road-segment/wiggle-room-%* 100)))
+         (p0            (get-pos in-lane  'end))
+         (p3            (get-pos out-lane 'beg))
+         (p1            (vec2+ p0 (vec2* (get-tangent-vec in-lane)  delta)))
+         (p2            (vec2- p0 (vec2* (get-tangent-vec out-lane) delta)))
+         (curve         (make-bezier-curve p0 p1 p2 p3)))
+
+    (set! (ref junction-lane 'curve)
+          curve)
+
+    ;; insert! can't do defaults atm :(
+    (hash-table-update!/default (ref junction 'lane-map 'inputs)
+                                in-lane
+                                (cut cons junction-lane <>)
+                                '())
+    (set! (ref junction 'lane-map 'outputs junction-lane)
+          out-lane)))
 
 (define-method (connect-all-lanes! (junction <road-junction>))
   (let* ((in-lanes  (get-incoming-lanes junction))
