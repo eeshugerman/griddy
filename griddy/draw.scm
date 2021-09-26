@@ -4,6 +4,7 @@
   #:use-module (srfi srfi-26)
   #:use-module (oop goops)
   #:use-module (chickadee math)
+  #:use-module (chickadee math bezier)
   #:use-module (chickadee math vector)
   #:use-module (chickadee math matrix)
   #:use-module (chickadee graphics path)
@@ -31,19 +32,34 @@
    painter))
 
 (define (draw-road-junction junction)
-  (with-canvas
-   (with-style ((fill-color *road-junction/color*))
-     (rotate-in-place pi/4
-                      (ref junction 'pos)
-                      (fill (regular-polygon (ref junction 'pos)
-                                             4
-                                             ;; why 3/2??
-                                             ;; doesn't seem to be exact anyway
-                                             (* 3/2 (get-radius junction))))))))
+  (define (draw-lane lane)
+    (let* ((curve (ref lane 'curve)))
+      (with-style ((stroke-color *road-lane/color*))
+        (stroke (path (move-to   (bezier-curve-p0 curve))
+                      (bezier-to (bezier-curve-p1 curve)
+                                 (bezier-curve-p2 curve)
+                                 (bezier-curve-p3 curve)))))))
+  (let* ((junction-painter
+          (fill (regular-polygon (ref junction 'pos)
+                                 4
+                                 ;; why 3/2??
+                                 ;; doesn't seem to be exact anyway
+                                 (* 3/2 (get-radius junction)))))
+
+         (junction-painter
+          (rotate-in-place pi/4
+                           (ref junction 'pos)
+                           junction-painter))
+         (junction-painter
+          (with-style ((fill-color *road-junction/color*))
+            junction-painter))
+
+         (lane-painters (map draw-lane (get-lanes junction))))
+    (with-canvas (apply superimpose junction-painter lane-painters))))
 
 
 (define (draw-road-segment segment)
-  (define (draw-road-lane lane)
+  (define (draw-lane lane)
     (let* ((lane-beg-pos  (get-pos lane 'beg))
            (lane-end-pos  (get-pos lane 'end))
            (lane-vec      (get-vec lane))
@@ -72,7 +88,7 @@
          (p-4           (vec2+ end-pos edge-offset))
          (road-painter  (with-style ((fill-color *road-segment/color*))
                           (fill (polyline p-1 p-2 p-3 p-4 p-1))))
-         (lane-painters (map draw-road-lane (get-lanes segment))))
+         (lane-painters (map draw-lane (get-lanes segment))))
 
     (with-canvas (apply superimpose road-painter lane-painters))))
 

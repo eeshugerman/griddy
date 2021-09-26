@@ -140,6 +140,9 @@
        *road-lane/width*)))
 
 (define-method (get-lanes (junction <road-junction>))
+  (hash-table-keys (ref junction 'lane-map 'outputs)))
+
+(define-method (get-segment-lanes (junction <road-junction>))
   (fold (lambda (segment lanes)
           (append lanes (get-lanes segment)))
         (list)
@@ -153,11 +156,11 @@
 
 (define-method (get-incoming-lanes (junction <road-junction>))
   (filter (negate (cut outgoing? <> junction))
-          (get-lanes junction)))
+          (get-segment-lanes junction)))
 
 (define-method (get-outgoing-lanes (junction <road-junction>))
   (filter (cut outgoing? <> junction)
-          (get-lanes junction)))
+          (get-segment-lanes junction)))
 
 (define-class <road-segment> (<static>)
   (actors ;; off-road only, otherwise they belong to lanes
