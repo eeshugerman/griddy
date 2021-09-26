@@ -37,44 +37,44 @@
                       (ref junction 'pos)
                       (fill (regular-polygon (ref junction 'pos)
                                              4
-                                             *road-junction/size*))))))
+                                             ;; why 3/2??
+                                             ;; doesn't seem to be exact anyway
+                                             (* 3/2 (get-radius junction))))))))
 
 
 (define (draw-road-segment segment)
-  (let* ((v-beg (get-pos segment 'beg))
-         (v-end (get-pos segment 'end))
-         (v-to-edge (vec2* (get-v-ortho segment)
-                           (/2 (get-width segment))))
-         (p-1 (vec2+ v-beg v-to-edge))
-         (p-2 (vec2- v-beg v-to-edge))
-         (p-3 (vec2- v-end v-to-edge))
-         (p-4 (vec2+ v-end v-to-edge))
-         (road-painter (fill (polyline p-1 p-2 p-3 p-4 p-1))))
+  (define (draw-road-lane lane)
+    (let* ((lane-beg-pos  (get-pos lane 'beg))
+           (lane-end-pos  (get-pos lane 'end))
+           (lane-vec      (get-vec lane))
+           (line-painter  (stroke (line lane-beg-pos lane-end-pos)))
+           (arrow-pos     (vec2+ lane-beg-pos (vec2* lane-vec 1/2)))
+           (arrow-angle   (* -1 (- (angle-of lane-vec) pi/2)))
+           ;; `rotate' rotates clockwise (?!), triangle initially points upward
+           (arrow-painter (fill (regular-polygon arrow-pos
+                                                 3
+                                                 *road-lane/arrow-size*)))
+           (arrow-painter (rotate-in-place arrow-angle
+                                           arrow-pos
+                                           arrow-painter)))
 
-    (define (draw-road-lane lane)
-      (let* ((direction   (ref lane 'direction))
-             (v-lane-beg  (get-pos lane 'beg))
-             (v-lane-end  (get-pos lane 'end))
-             (v-lane      (get-v lane))
-             (v-arrow-pos (vec2+ v-lane-beg (vec2* v-lane 1/2)))
+      (with-style ((stroke-color *road-lane/color*)
+                   (fill-color *road-lane/color*))
+        (superimpose line-painter arrow-painter))))
 
-             (arrow-angle (angle-of v-lane))
-             (arrow-painter
-              ;; `rotate' rotates clockwise (?!), triangle initially
-              ;; points upward
-              (rotate-in-place (* -1 (- arrow-angle pi/2))
-                               v-arrow-pos
-                               (fill (regular-polygon v-arrow-pos 3
-                                                      *road-lane/arrow-size*))))
-             (line-painter
-              (stroke (line v-lane-beg v-lane-end ))))
+  (let* ((beg-pos       (get-pos segment 'beg))
+         (end-pos       (get-pos segment 'end))
+         (edge-offset   (vec2* (get-ortho-vec segment)
+                               (/2 (get-width segment))))
+         (p-1           (vec2+ beg-pos edge-offset))
+         (p-2           (vec2- beg-pos edge-offset))
+         (p-3           (vec2- end-pos edge-offset))
+         (p-4           (vec2+ end-pos edge-offset))
+         (road-painter  (with-style ((fill-color *road-segment/color*))
+                          (fill (polyline p-1 p-2 p-3 p-4 p-1))))
+         (lane-painters (map draw-road-lane (get-lanes segment))))
 
-        (with-style ((stroke-color *road-lane/color*)
-                     (fill-color *road-lane/color*))
-          (superimpose line-painter arrow-painter))))
-
-    (let* ((lane-painters (map draw-road-lane (get-lanes segment))))
-      (with-canvas (apply superimpose road-painter (reverse lane-painters))))))
+    (with-canvas (apply superimpose road-painter lane-painters))))
 
 (define (draw-actor actor)
   (ref actor 'location 'pos-param)
@@ -82,6 +82,6 @@
                  (fill (circle (get-pos actor) *actor/size*)))))
 
 (define (draw-world world)
+  (for-each draw-road-junction (get-road-junctions world))
   (for-each draw-road-segment (get-road-segments world))
-  ;; (for-each draw-road-junction (get-road-junctions world))
   (for-each draw-actor (get-actors world)))

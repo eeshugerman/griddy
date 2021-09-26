@@ -34,12 +34,13 @@
             get-offset
             get-outgoing-lanes
             get-pos
+            get-radius
             get-road-junctions
             get-road-lanes
             get-road-segments
-            get-v
-            get-v-ortho
-            get-v-tangent
+            get-vec
+            get-ortho-vec
+            get-tangent-vec
             get-width
             link!
             off-road->on-road
@@ -76,9 +77,7 @@
 
 (define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
   (vec2+ (get-pos (ref lane 'segment)
-                  (match-direction lane which (flip which))
-                  ;; which
-                  )
+                  (match-direction lane which (flip which)))
          (get-offset lane)))
 
 (define-method (get-offset (lane <road-lane/segment>))
@@ -92,7 +91,7 @@
             ('forw (+ (get-lane-count segment 'back)
                       (ref lane 'rank)))))
 
-         (v-ortho         (get-v-ortho segment))
+         (v-ortho         (get-ortho-vec segment))
 
          (v-segment-edge  (vec2* v-ortho
                                  (* *road-lane/width*
@@ -171,25 +170,25 @@
     (set! (ref self slot) (copy-tree (ref self slot))))
   (for-each make-mutable! alist-slots))
 
-(define-method (get-v (segment <road-segment>))
+(define-method (get-vec (segment <road-segment>))
   (vec2- (get-pos segment 'end)
          (get-pos segment 'beg)))
 
-(define-method (get-v (lane <road-lane/segment>))
+(define-method (get-vec (lane <road-lane/segment>))
   (vec2- (get-pos lane 'end)
          (get-pos lane 'beg)))
 
-(define-method (get-v-tangent (segment <road-segment>))
+(define-method (get-tangent-vec (segment <road-segment>))
   ;; can't use `get-v' because recursive loop
   (vec2-normalize (vec2- (ref segment 'junction 'end 'pos)
                          (ref segment 'junction 'beg 'pos))))
 
-(define-method (get-v-ortho (segment <road-segment>))
-  (vec2-rotate (get-v-tangent segment) pi/2))
+(define-method (get-ortho-vec (segment <road-segment>))
+  (vec2-rotate (get-tangent-vec segment) pi/2))
 
 (define-method (get-pos (segment <road-segment>) (which <symbol>))
   (let* ((junction (ref segment 'junction which))
-         (offset   (vec2* (get-v-tangent segment)
+         (offset   (vec2* (get-tangent-vec segment)
                           (* (match which
                                ('beg +1)
                                ('end -1))
@@ -233,11 +232,11 @@
      (get-lane-count segment)))
 
 (define-method (get-length (segment <road-segment>))
-  (vec2-magnitude (get-v segment)))
+  (vec2-magnitude (get-vec segment)))
 
 (define-method (get-midpoint (segment <road-segment>))
   (vec2+ (get-pos segment 'beg)
-         (vec2* (get-v segment) 1/2)))
+         (vec2* (get-vec segment) 1/2)))
 
 (define-class <location> ()
   (pos-param ;; 0..1
@@ -257,7 +256,7 @@
 (define-method (get-pos (loc <location/off-road>))
   (let* ((segment  (ref loc 'road-segment))
          (v-beg    (get-pos segment 'beg))
-         (v-offset (vec2* (get-v-ortho segment)  ;; magnitude is arbitrary
+         (v-offset (vec2* (get-ortho-vec segment)  ;; magnitude is arbitrary
                           (* (match (ref loc 'road-side-direction)
                                ('forw +1)
                                ('back -1))
@@ -265,13 +264,13 @@
                              (get-width (ref loc 'road-segment))
                              (+ 1 (* 2 (/ *road-segment/wiggle-room-%* 100))))))
          (pos-param (ref loc 'pos-param)))
-    (vec2+/many v-beg  v-offset (vec2* (get-v segment) pos-param))))
+    (vec2+/many v-beg  v-offset (vec2* (get-vec segment) pos-param))))
 
 (define-method (get-pos (loc <location/on-road>))
   (let* ((lane      (ref loc 'road-lane))
          (v-beg     (get-pos lane 'beg))
          (pos-param (ref loc 'pos-param)))
-    (vec2+ v-beg (vec2* (get-v lane) pos-param))))
+    (vec2+ v-beg (vec2* (get-vec lane) pos-param))))
 
 (define-method (on-road->off-road (loc <location/on-road>))
   (make <location/off-road>

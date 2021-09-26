@@ -14,10 +14,9 @@
                  (cddr defs)))))))
 
 (define-constants
-  *road-junction/size*         25
-  *road-junction/color*        tango-aluminium-6
+  *road-junction/color*        tango-aluminium-2
 
-  *road-segment/color*         tango-aluminium-5
+  *road-segment/color*         white
   *road-segment/wiggle-room-%* 20
 
   *road-lane/arrow-size*       5
