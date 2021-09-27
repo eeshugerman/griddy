@@ -71,6 +71,7 @@
   rank) ;; 0..
 
 (define-class <road-lane/junction> (<road-lane>)
+  (junction #:init-keyword #:junction)
   (segment
    #:init-form `((beg . ())
                  (end . ())))
@@ -91,15 +92,22 @@
     (set! (ref self 'curve) curve))
   (next-method))
 
-;; might want to refine these at some point
-;; but for now just pass through to segment
 (define-method (get-length (lane <road-lane/segment>))
   (get-length (ref lane 'segment)))
+
+(define-method (get-length (lane <road-lane/junction>>))
+  ???)
 
 (define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
   (vec2+ (get-pos (ref lane 'segment)
                   (match-direction lane which (flip which)))
          (get-offset lane)))
+
+(define-method (get-pos (lane <road-lane/junction>) (which <symbol>))
+  ((match which
+     ('beg bezier-curve-p0)
+     ('end bezier-curve-p3))
+   (ref lane 'curve))))
 
 (define-method (get-offset (lane <road-lane/segment>))
   (let* ((segment         (ref lane 'segment))
@@ -266,9 +274,12 @@
 (define-method (get-length (segment <road-segment>))
   (vec2-magnitude (get-vec segment)))
 
-(define-method (get-midpoint (segment <road-segment>))
-  (vec2+ (get-pos segment 'beg)
-         (vec2* (get-vec segment) 1/2)))
+(define-method (get-midpoint (straight-thing <static>))
+  (vec2+ (get-pos straight-thing 'beg)
+         (vec2* (get-vec straight-thing) 1/2)))
+
+(define-method (get-midpoint (lane <road-lane/junction>))
+  (bezier-curve-point-at (ref lane 'curve) 1/2)))
 
 (define-class <location> ()
   (pos-param ;; 0..1
@@ -302,7 +313,17 @@
   (let* ((lane      (ref loc 'road-lane))
          (v-beg     (get-pos lane 'beg))
          (pos-param (ref loc 'pos-param)))
-    (vec2+ v-beg (vec2* (get-vec lane) pos-param))))
+    (vec2+ v-beg (vec2* (get-vec lane) pos-param)))
+
+  (let ((lane      (ref loc 'road-lane))
+        (pos-param (ref loc 'pos-param))
+        (v-beg     (get-pos lane 'beg))
+        (delta     (cond
+                    ((is-a? lane <road-lane/segment>)
+                     (vec2* (get-vec lane) pos-param))
+                    ((is-a? lane <road-lane/junction>)
+                     (bezier-curve-point-at (ref lane 'curve) pos-param)))))
+    (vec2+ v-beg delta)))
 
 (define-method (on-road->off-road (loc <location/on-road>))
   (make <location/off-road>
@@ -374,10 +395,20 @@
 
 ;; -----------------------------------------------------------------------------
 (define-method (get-junction-lanes (lane <road-lane/segment>))
-  )
+  (ref lane
+       'segment
+       'junction
+       (match-direction lane 'end 'beg)
+       'lane-map
+       'inputs
+       lane))
 
 (define-method (get-segment-lane (lane <road-lane/junction>))
-  )
+  (ref lane
+       'junction
+       'lane-map
+       'outputs
+       lane))
 
 (define-method (connect! (in-lane <road-lane/segment>)
                          (out-lane <road-lane/segment>))

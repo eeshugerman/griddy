@@ -23,17 +23,21 @@
 
 ;; assumes all road have unbroken medians
 (define-method (find-route (init <location/on-road>) (dest <location/on-road>))
-  (define (neighbors lane)
-    (filter (cut neq? lane <>)
-            (get-outgoing-lanes (ref lane
-                                     'segment
-                                     'junction
-                                     (match-direction lane 'end 'beg)))))
 
-  (define (cost lane-1 lane-2)
+  (define-method (neighbors (lane <road-lane/segment>))
+    (get-junction-lanes lane))
+  (define-method (neighbors (lane <road-lane/junction>))
+    (get-segment-lane lane))
+
+  (define-method (cost (lane-1 <road-lane/segment>) (lane-2 <road-lane>))
     "actual cost of moving between neighboring nodes"
     ;; TODO: not sure about this
     (get-length (ref lane-1 'segment)))
+
+    (define-method (cost (lane-1 <road-lane/junction>) (lane-2 <road-lane>))
+      "actual cost of moving between neighboring nodes"
+      ;; TODO: not sure about this
+      0)
 
   (define (distance lane-1 lane-2)
     "approximate cost of moving between nodes"
@@ -50,7 +54,7 @@
          (pos-param->route-step (cut list 'arrive-at <>)))
     (extend (map lane->route-step (cdr lanes))
               (pos-param->route-step (ref dest 'pos-param)))))
-
+c
 (define (get-pos-param-delta-max actor)
   (* (ref actor 'max-speed)
      *simulate/time-step*
