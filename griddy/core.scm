@@ -71,11 +71,25 @@
   rank) ;; 0..
 
 (define-class <road-lane/junction> (<road-lane>)
-  ;; junction
   (segment
    #:init-form `((beg . ())
                  (end . ())))
   curve)
+
+(define-method (initialize (self <road-lane/junction>) initargs)
+  (let* ((junction (get-keyword #:junction initargs))
+         (in-lane  (get-keyword #:in-lane initargs))
+         (out-lane (get-keyword #:out-lane initargs))
+         (offset   (* 2
+                      (get-radius junction)
+                      (/ *road-segment/wiggle-room-%* 100)))
+         (p0       (get-pos in-lane  'end))
+         (p3       (get-pos out-lane 'beg))
+         (p1       (vec2+ p0 (vec2* (get-tangent-vec in-lane)  offset)))
+         (p2       (vec2- p3 (vec2* (get-tangent-vec out-lane) offset)))
+         (curve    (make-bezier-curve p0 p1 p2 p3)))
+    (set! (ref self 'curve) curve))
+  (next-method))
 
 ;; might want to refine these at some point
 ;; but for now just pass through to segment
@@ -381,18 +395,10 @@
             (get-junction out-lane 'out))
       (throw 'lanes-do-not-meet))
   (let* ((junction      (get-junction in-lane 'in))
-         (junction-lane (make <road-lane/junction>))
-         (delta         (* 2
-                           (get-radius junction)
-                           (/ *road-segment/wiggle-room-%* 100)))
-         (p0            (get-pos in-lane  'end))
-         (p3            (get-pos out-lane 'beg))
-         (p1            (vec2+ p0 (vec2* (get-tangent-vec in-lane)  delta)))
-         (p2            (vec2- p3 (vec2* (get-tangent-vec out-lane) delta)))
-         (curve         (make-bezier-curve p0 p1 p2 p3)))
-
-    (set! (ref junction-lane 'curve)
-          curve)
+         (junction-lane (make <road-lane/junction>
+                          #:junction junction
+                          #:in-lane  in-lane
+                          #:out-lane out-lane)))
 
     ;; insert! can't do defaults atm :(
     (hash-table-update!/default (ref junction 'lane-map 'inputs)
