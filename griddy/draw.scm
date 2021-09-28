@@ -54,8 +54,11 @@
           (with-style ((fill-color *road-junction/color*))
             junction-painter))
 
-         (lane-painters (map draw-lane (get-lanes junction))))
-    (with-canvas (apply superimpose junction-painter lane-painters))))
+         (lane-painters (map draw-lane (get-lanes junction)))
+         )
+    (with-canvas (apply superimpose junction-painter lane-painters))
+    ;; (with-canvas junction-painter)
+    ))
 
 
 (define (draw-road-segment segment)
@@ -65,12 +68,11 @@
            (lane-vec      (get-vec lane))
            (line-painter  (stroke (line lane-beg-pos lane-end-pos)))
            (arrow-pos     (vec2+ lane-beg-pos (vec2* lane-vec 1/2)))
-           (arrow-angle   (* -1 (- (angle-of lane-vec) pi/2)))
-           ;; `rotate' rotates clockwise (?!), triangle initially points upward
            (arrow-painter (fill (regular-polygon arrow-pos
                                                  3
                                                  *road-lane/arrow-size*)))
-           (arrow-painter (rotate-in-place arrow-angle
+           ;; `rotate' rotates clockwise, triangle initially points upward
+           (arrow-painter (rotate-in-place (- pi/2  (angle-of lane-vec))
                                            arrow-pos
                                            arrow-painter)))
 

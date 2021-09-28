@@ -36,11 +36,13 @@
             get-midpoint
             get-offset
             get-outgoing-lanes
+            get-junction-lanes
             get-pos
             get-radius
             get-road-junctions
             get-road-lanes
             get-road-segments
+            get-segment-lanes
             get-vec
             get-ortho-vec
             get-tangent-vec
@@ -72,30 +74,38 @@
 
 (define-class <road-lane/junction> (<road-lane>)
   (junction #:init-keyword #:junction)
-  (segment
-   #:init-form `((beg . ())
-                 (end . ())))
   curve)
 
 (define-method (initialize (self <road-lane/junction>) initargs)
-  (let* ((junction (get-keyword #:junction initargs))
-         (in-lane  (get-keyword #:in-lane initargs))
-         (out-lane (get-keyword #:out-lane initargs))
-         (offset   (* 2
-                      (get-radius junction)
-                      (/ *road-segment/wiggle-room-%* 100)))
-         (p0       (get-pos in-lane  'end))
-         (p3       (get-pos out-lane 'beg))
-         (p1       (vec2+ p0 (vec2* (get-tangent-vec in-lane)  offset)))
-         (p2       (vec2- p3 (vec2* (get-tangent-vec out-lane) offset)))
-         (curve    (make-bezier-curve p0 p1 p2 p3)))
-    (set! (ref self 'curve) curve))
+  (define (get-junction lane lane-type)
+    (ref lane 'segment 'junction (match `(,lane-type ,(ref lane 'direction))
+                                   (('in  'forw) 'end)
+                                   (('in  'back) 'beg)
+                                   (('out 'forw) 'beg)
+                                   (('out 'back) 'end))))
+
+  (let ((in-lane  (get-keyword #:in-lane initargs))
+        (out-lane (get-keyword #:out-lane initargs)))
+    (unless (eq? (get-junction in-lane 'in)
+                 (get-junction out-lane 'out))
+      (throw 'lanes-do-not-meet))
+    (let* ((junction (get-junction in-lane 'in))
+           (offset   (* 2
+                        (get-radius junction)
+                        (/ *road-segment/wiggle-room-%* 100)))
+           (p0       (get-pos in-lane  'end))
+           (p3       (get-pos out-lane 'beg))
+           (p1       (vec2+ p0 (vec2* (get-tangent-vec in-lane)  offset)))
+           (p2       (vec2- p3 (vec2* (get-tangent-vec out-lane) offset)))
+           (curve    (make-bezier-curve p0 p1 p2 p3)))
+      (set! (ref self 'junction) junction)
+      (set! (ref self 'curve) curve)))
   (next-method))
 
 (define-method (get-length (lane <road-lane/segment>))
   (get-length (ref lane 'segment)))
 
-(define-method (get-length (lane <road-lane/junction>>))
+(define-method (get-length (lane <road-lane/junction>))
   ???)
 
 (define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
@@ -107,7 +117,7 @@
   ((match which
      ('beg bezier-curve-p0)
      ('end bezier-curve-p3))
-   (ref lane 'curve))))
+   (ref lane 'curve)))
 
 (define-method (get-offset (lane <road-lane/segment>))
   (let* ((segment         (ref lane 'segment))
@@ -160,29 +170,6 @@
        1/2
        max-segment-lane-count
        *road-lane/width*)))
-
-(define-method (get-lanes (junction <road-junction>))
-  (hash-table-keys (ref junction 'lane-map 'outputs)))
-
-(define-method (get-segment-lanes (junction <road-junction>))
-  (fold (lambda (segment lanes)
-          (append lanes (get-lanes segment)))
-        (list)
-        (ref junction 'segments)))
-
-(define (outgoing? lane junction)
-  (or (and (eq? (ref lane 'segment 'junction 'beg) junction)
-           (eq? (ref lane 'direction) 'forw))
-      (and (eq? (ref lane 'segment 'junction 'end) junction)
-           (eq? (ref lane 'direction) 'back))))
-
-(define-method (get-incoming-lanes (junction <road-junction>))
-  (filter (negate (cut outgoing? <> junction))
-          (get-segment-lanes junction)))
-
-(define-method (get-outgoing-lanes (junction <road-junction>))
-  (filter (cut outgoing? <> junction)
-          (get-segment-lanes junction)))
 
 (define-class <road-segment> (<static>)
   (actors ;; off-road only, otherwise they belong to lanes
@@ -279,7 +266,7 @@
          (vec2* (get-vec straight-thing) 1/2)))
 
 (define-method (get-midpoint (lane <road-lane/junction>))
-  (bezier-curve-point-at (ref lane 'curve) 1/2)))
+  (bezier-curve-point-at (ref lane 'curve) 1/2))
 
 (define-class <location> ()
   (pos-param ;; 0..1
@@ -310,19 +297,19 @@
     (vec2+/many v-beg  v-offset (vec2* (get-vec segment) pos-param))))
 
 (define-method (get-pos (loc <location/on-road>))
-  (let* ((lane      (ref loc 'road-lane))
-         (v-beg     (get-pos lane 'beg))
-         (pos-param (ref loc 'pos-param)))
-    (vec2+ v-beg (vec2* (get-vec lane) pos-param)))
+  ;; (let* ((lane      (ref loc 'road-lane))
+  ;;        (v-beg     (get-pos lane 'beg))
+  ;;        (pos-param (ref loc 'pos-param)))
+  ;;   (vec2+ v-beg (vec2* (get-vec lane) pos-param)))
 
-  (let ((lane      (ref loc 'road-lane))
-        (pos-param (ref loc 'pos-param))
-        (v-beg     (get-pos lane 'beg))
-        (delta     (cond
-                    ((is-a? lane <road-lane/segment>)
-                     (vec2* (get-vec lane) pos-param))
-                    ((is-a? lane <road-lane/junction>)
-                     (bezier-curve-point-at (ref lane 'curve) pos-param)))))
+  (let* ((lane      (ref loc 'road-lane))
+         (pos-param (ref loc 'pos-param))
+         (v-beg     (get-pos lane 'beg))
+         (delta     (cond
+                     ((is-a? lane <road-lane/segment>)
+                      (vec2* (get-vec lane) pos-param))
+                     ((is-a? lane <road-lane/junction>)
+                      (bezier-curve-point-at (ref lane 'curve) pos-param)))))
     (vec2+ v-beg delta)))
 
 (define-method (on-road->off-road (loc <location/on-road>))
@@ -394,6 +381,29 @@
           (fold into-actors (list) (get-road-segments world))))
 
 ;; -----------------------------------------------------------------------------
+(define-method (get-lanes (junction <road-junction>))
+  (hash-table-keys (ref junction 'lane-map 'outputs)))
+
+(define-method (get-segment-lanes (junction <road-junction>))
+  (fold (lambda (segment lanes)
+          (append lanes (get-lanes segment)))
+        (list)
+        (ref junction 'segments)))
+
+(define (outgoing? lane junction)
+  (or (and (eq? (ref lane 'segment 'junction 'beg) junction)
+           (eq? (ref lane 'direction) 'forw))
+      (and (eq? (ref lane 'segment 'junction 'end) junction)
+           (eq? (ref lane 'direction) 'back))))
+
+(define-method (get-incoming-lanes (junction <road-junction>))
+  (filter (negate (cut outgoing? <> junction))
+          (get-segment-lanes junction)))
+
+(define-method (get-outgoing-lanes (junction <road-junction>))
+  (filter (cut outgoing? <> junction)
+          (get-segment-lanes junction)))
+
 (define-method (get-junction-lanes (lane <road-lane/segment>))
   (ref lane
        'segment
@@ -401,7 +411,8 @@
        (match-direction lane 'end 'beg)
        'lane-map
        'inputs
-       lane))
+       lane)
+  )
 
 (define-method (get-segment-lane (lane <road-lane/junction>))
   (ref lane
@@ -412,31 +423,18 @@
 
 (define-method (connect! (in-lane <road-lane/segment>)
                          (out-lane <road-lane/segment>))
-
-  (define (get-junction lane lane-type)
-    (define which
-      (match `(,lane-type ,(ref lane 'direction))
-        (('in  'forw) 'end)
-        (('in  'back) 'beg)
-        (('out 'forw) 'beg)
-        (('out 'back) 'end)))
-    (ref lane 'segment 'junction which))
-
-  (if (neq? (get-junction in-lane  'in)
-            (get-junction out-lane 'out))
-      (throw 'lanes-do-not-meet))
-  (let* ((junction      (get-junction in-lane 'in))
-         (junction-lane (make <road-lane/junction>
-                          #:junction junction
-                          #:in-lane  in-lane
-                          #:out-lane out-lane)))
-
+  (let* ((junction-lane
+          (make <road-lane/junction>
+            #:in-lane  in-lane
+            #:out-lane out-lane))
+         (lane-maps
+          (ref junction-lane 'junction 'lane-map)))
     ;; insert! can't do defaults atm :(
-    (hash-table-update!/default (ref junction 'lane-map 'inputs)
+    (hash-table-update!/default (ref lane-maps 'inputs)
                                 in-lane
                                 (cut cons junction-lane <>)
                                 '())
-    (set! (ref junction 'lane-map 'outputs junction-lane)
+    (set! (ref lane-maps 'outputs junction-lane)
           out-lane)))
 
 (define-method (connect-all-lanes! (junction <road-junction>))
