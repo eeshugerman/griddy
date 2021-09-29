@@ -135,5 +135,6 @@
    #:update update
    #:update-hz *simulate/fps*
    #:draw (lambda (alpha) (draw-world world))
+   ;; #:draw (lambda (alpha) 'pass)
    #:window-width width
    #:window-height height))

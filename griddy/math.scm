@@ -22,3 +22,6 @@
 
 (define (vec2+/many . vecs)
   (fold vec2+ (car vecs) (cdr vecs)))
+
+(define (recip x)
+  (/ 1 x))
