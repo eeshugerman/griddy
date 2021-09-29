@@ -6,6 +6,7 @@
   #:re-export (pi pi/2)
   #:export (pi/4
             /2
+            recip
             l2
             vec2-rotate
             vec2+/many))

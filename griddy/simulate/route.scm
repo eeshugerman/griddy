@@ -67,9 +67,9 @@
 
 (define* (get-pos-param-delta
           actor
-          :#key
-          (speed     (ref actor 'max-speed))
+          #:key
           (time-step *simulate/time-step*)
+          (speed     (ref actor 'max-speed))
           (road-lane (ref actor 'location 'road-lane)))
   (* speed time-step (recip (get-length road-lane))))
 
@@ -77,7 +77,7 @@
   (let* ((lane-current        (ref actor 'location 'road-lane))
          (direction-current   (ref lane-current 'direction))
          (pos-param-current   (ref actor 'location 'pos-param))
-         (pos-param-delta-max (get-pos-param-delta-max actor))
+         (pos-param-delta-max (get-pos-param-delta actor))
          (done                (>= pos-param-delta-max
                                   (- pos-param-target
                                      pos-param-current)))
@@ -92,31 +92,27 @@
                         #:road-lane (++ lane-current)))))
 
 (define (route-step/turn-onto$ ++ actor lane-next)
-  (define (get-next)
-    (let* ((pos-param-current    (ref actor 'location 'pos-param))
-           (pos-param-delta-max  (get-pos-param-delta-max actor))
-           (pos-param-next-naive (+ pos-param-current pos-param-delta))
-           (done       (>= pos-param-next-naive 1)))
-      (if (not done)
-          (values #f (ref actor 'location 'road-lane) pos-param-next-naive)
-          (let* ((fraction-time-spent-on-current
-                  (/ (- 1 pos-param-current) pos-param-delta-max))
-                 (time-remaining
-                  (* (- 1 fraction-time-spent-on-current)
-                     *simulate/time-step*))
-                 (pos-param-next
-                  (get-pos-param-delta actor
-                                       #:time-step time-remaining
-                                       #:road-lane lane-next)))
-            (values #t lane-next pos-param-next)))))
-
-  (let-values (((done lane-next pos-param-next) (get-next)))
-
+  (let* ((lane-current          (ref actor 'location 'road-lane))
+         (pos-param-current     (ref actor 'location 'pos-param))
+         (pos-param-delta       (get-pos-param-delta actor))
+         (pos-param-next-naive  (+ pos-param-current pos-param-delta))
+         (done                  (>= pos-param-next-naive 1))
+         (pos-param-next
+          (if done
+              (let* ((fraction-time-spent
+                      (/ (- 1 pos-param-current) pos-param-delta))
+                     (time-remaining
+                      (* (- 1 fraction-time-spent)
+                         *simulate/time-step*)))
+                (get-pos-param-delta actor
+                                     #:time-step time-remaining
+                                     #:road-lane lane-next))
+              pos-param-next-naive)))
     (when done
       (route-pop! (++ actor)))
 
     (link! (++ actor) (make <location/on-road>
-                        #:road-lane (++ lane-next))
+                        #:road-lane (++ (if done lane-next lane-current))
                         #:pos-param (++ pos-param-next)))))
 
 (define-method (advance-on-route$ (++ <generic>) (actor <actor>))
