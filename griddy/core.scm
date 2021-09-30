@@ -42,6 +42,7 @@
             get-road-junctions
             get-road-lanes
             get-road-segments
+            get-segment-lane
             get-segment-lanes
             get-vec
             get-ortho-vec
@@ -106,7 +107,18 @@
   (get-length (ref lane 'segment)))
 
 (define-method (get-length (lane <road-lane/junction>))
-  ???)
+  "approximate"
+  (let* ((n           *road-lane/approx-pts*)
+         (1/n         (recip n))
+         (t->pt       (cut bezier-curve-point-at (ref lane 'curve) <>))
+         (pts-low     (map t->pt (iota n 0   1/n)))
+         (pts-high    (map t->pt (iota n 1/n 1/n))))
+
+    (fold (lambda (pt-low pt-high acc)
+            (+ acc (vec2-magnitude (vec2- pt-high pt-low))))
+          0
+          pts-low
+          pts-high)))
 
 (define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
   (vec2+ (get-pos (ref lane 'segment)
@@ -297,20 +309,14 @@
     (vec2+/many v-beg  v-offset (vec2* (get-vec segment) pos-param))))
 
 (define-method (get-pos (loc <location/on-road>))
-  ;; (let* ((lane      (ref loc 'road-lane))
-  ;;        (v-beg     (get-pos lane 'beg))
-  ;;        (pos-param (ref loc 'pos-param)))
-  ;;   (vec2+ v-beg (vec2* (get-vec lane) pos-param)))
-
   (let* ((lane      (ref loc 'road-lane))
-         (pos-param (ref loc 'pos-param))
-         (v-beg     (get-pos lane 'beg))
-         (delta     (cond
-                     ((is-a? lane <road-lane/segment>)
-                      (vec2* (get-vec lane) pos-param))
-                     ((is-a? lane <road-lane/junction>)
-                      (bezier-curve-point-at (ref lane 'curve) pos-param)))))
-    (vec2+ v-beg delta)))
+         (pos-param (ref loc 'pos-param)))
+    (cond
+     ((is-a? lane <road-lane/segment>)
+      (vec2+ (get-pos lane 'beg)
+             (vec2* (get-vec lane) pos-param)))
+     ((is-a? lane <road-lane/junction>)
+      (bezier-curve-point-at (ref lane 'curve) pos-param)))))
 
 (define-method (on-road->off-road (loc <location/on-road>))
   (make <location/off-road>
@@ -411,8 +417,7 @@
        (match-direction lane 'end 'beg)
        'lane-map
        'inputs
-       lane)
-  )
+       lane))
 
 (define-method (get-segment-lane (lane <road-lane/junction>))
   (ref lane
@@ -422,7 +427,8 @@
        lane))
 
 (define-method (connect! (in-lane <road-lane/segment>)
-                         (out-lane <road-lane/segment>))
+                         (out-lane <road-lane/segment>)
+                         (world <world>))
   (let* ((junction-lane
           (make <road-lane/junction>
             #:in-lane  in-lane
@@ -435,16 +441,17 @@
                                 (cut cons junction-lane <>)
                                 '())
     (set! (ref lane-maps 'outputs junction-lane)
-          out-lane)))
+          out-lane)
+    (add! world junction-lane)))
 
-(define-method (connect-all-lanes! (junction <road-junction>))
+(define-method (connect-all-lanes! (junction <road-junction>) (world <world>))
   (let* ((in-lanes  (get-incoming-lanes junction))
          (out-lanes (get-outgoing-lanes junction)))
     (for-each
      (lambda (in-lane)
        (for-each
         (lambda (out-lane)
-          (connect! in-lane out-lane))
+          (connect! in-lane out-lane world))
         (filter (cut neq? in-lane <>) out-lanes)))
      in-lanes)))
 

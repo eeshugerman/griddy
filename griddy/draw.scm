@@ -54,10 +54,10 @@
           (with-style ((fill-color *road-junction/color*))
             junction-painter))
 
-         (lane-painters (map draw-lane (get-lanes junction)))
+         ;; (lane-painters (map draw-lane (get-lanes junction)))
          )
-    (with-canvas (apply superimpose junction-painter lane-painters))
-    ;; (with-canvas junction-painter)
+    ;; (with-canvas (apply superimpose junction-painter lane-painters))
+    (with-canvas junction-painter)
     ))
 
 
@@ -95,7 +95,6 @@
     (with-canvas (apply superimpose road-painter lane-painters))))
 
 (define (draw-actor actor)
-  (ref actor 'location 'pos-param)
   (with-canvas (with-style ((fill-color *actor/color*))
                  (fill (circle (get-pos actor) *actor/size*)))))
 

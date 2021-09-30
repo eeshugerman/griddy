@@ -68,7 +68,7 @@
                  (link! lane segment)
                  (add! world lane)))))))
 
-    (array-for-each connect-all-lanes! junctions)
+    (array-for-each (cut connect-all-lanes! <> world) junctions)
 
     world))
 

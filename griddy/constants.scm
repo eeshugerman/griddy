@@ -29,7 +29,11 @@
   *road-lane/arrow-size*       5
   *road-lane/color*            tango-plum
   *road-lane/width*            15
+  *road-lane/approx-pts*       5
 
   *actor/size*                 5
   *actor/color*                tango-light-chameleon
+
+  *simulate/time-step*         1/20
+
   )
