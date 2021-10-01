@@ -34,6 +34,6 @@
   *actor/size*                 5
   *actor/color*                tango-light-chameleon
 
-  *simulate/time-step*         1/20
+  *simulate/time-step*         1/10
 
   )

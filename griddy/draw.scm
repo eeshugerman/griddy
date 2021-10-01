@@ -54,11 +54,8 @@
           (with-style ((fill-color *road-junction/color*))
             junction-painter))
 
-         ;; (lane-painters (map draw-lane (get-lanes junction)))
-         )
-    ;; (with-canvas (apply superimpose junction-painter lane-painters))
-    (with-canvas junction-painter)
-    ))
+         (lane-painters (map draw-lane (get-lanes junction))))
+    (with-canvas (apply superimpose junction-painter lane-painters))))
 
 
 (define (draw-road-segment segment)

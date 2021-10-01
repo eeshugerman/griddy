@@ -114,13 +114,16 @@
 
 (define world #f)
 
-(define* (simulate make-skeleton add-actors! #:key (width 500) (height 500))
+(define* (simulate make-skeleton add-actors!
+                   #:key (width 500) (height 500) (length #f))
   (define (load)
     (set! world (make-skeleton))
     (add-actors! world))
 
 
   (define (update delta-t)
+    (if (and length (> (elapsed-time) (* 1000 length)))
+        (abort-game))
     (let* ((world++ (make-skeleton))
            (++ (make-++ world world++)))
       (for-each
