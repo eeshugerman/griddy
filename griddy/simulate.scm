@@ -4,7 +4,7 @@
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (oop goops describe)
-  #:use-module (chickadee)
+  #:use-module (griddy event-loop)
   #:use-module (griddy core)
   #:use-module (griddy util)
   #:use-module (griddy draw)

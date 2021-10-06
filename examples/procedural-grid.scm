@@ -95,4 +95,5 @@
        (agenda-push! actor `(travel-to ,(random-location))))
      actors)))
 
-(simulate make-skeleton add-actors! #:width 700 #:height 700 #:length 90)
+(simulate make-skeleton add-actors!
+          #:width 700 #:height 700 #:length 1000)
