@@ -1,3 +1,5 @@
+;;; === adapted from chickadee.scm ===
+
 ;;; Chickadee Game Toolkit
 ;;; Copyright © 2018, 2021 David Thompson <davet@gnu.org>
 ;;; Copyright © 2020 Peter Elliott <pelliott@ualberta.ca>
@@ -39,15 +41,109 @@
   #:use-module (sdl2 events)
   #:use-module ((sdl2 video) #:prefix sdl2:)
   #:use-module (srfi srfi-9)
-  #:export (current-window
+  #:export (abort-game
+            current-window
             window?
             window-width
             window-height
             window-x
             window-y
             elapsed-time
-            run-game)
-  #:re-export (abort-game))
+            run-game))
+
+;;; === stop ===
+
+;;; === adapted from chickadee/game-loop.scm ===
+
+;;;
+;;; Error handling
+;;;
+
+(define (call-with-error-handling handler thunk)
+  (if handler
+      (let ((stack #f))
+        (catch #t
+          (lambda ()
+            (thunk)
+            #f)
+          (lambda (key . args)
+            (handler stack key args)
+            #t)
+          (lambda (key . args)
+            (set! stack (make-stack #t 3)))))
+      (begin
+        (thunk)
+        #f)))
+
+(define-syntax-rule (with-error-handling handler body ...)
+  (call-with-error-handling handler (lambda () body ...)))
+
+(define (default-error-handler stack key args)
+  (apply throw key args))
+
+;;;
+;;; Game loop kernel
+;;;
+
+(define game-loop-prompt-tag (make-prompt-tag 'game-loop))
+
+(define (abort-game)
+  (abort-to-prompt game-loop-prompt-tag #f))
+
+(define current-timestep (make-parameter 0.0))
+
+(define* (run-game* #:key init update render time error
+                    (update-hz 60))
+  (let ((timestep (/ 1.0 update-hz)))
+    (parameterize ((current-timestep timestep))
+      (call-with-prompt game-loop-prompt-tag
+        (lambda ()
+          ;; Catch SIGINT and kill the loop.
+          (sigaction SIGINT
+            (lambda (signum)
+              (abort-game)))
+          (init)
+          ;; A simple analogy is that we are filling up a bucket
+          ;; with water.  When the bucket fills up to a marked
+          ;; line, we dump it out.  Our water is time, and each
+          ;; time we dump the bucket we update the game.  Updating
+          ;; the game on a fixed timestep like this yields a
+          ;; stable simulation.
+          (let loop ((previous-time (time))
+                     (buffer 0.0))
+            (let* ((current-time (time))
+                   (delta (- current-time previous-time)))
+              (let update-loop ((buffer (+ buffer delta)))
+                (if (>= buffer timestep)
+                    ;; Short-circuit the update loop if an error
+                    ;; occurred, and reset the current time to now in
+                    ;; order to discard the undefined amount of time
+                    ;; that was spent handling the error.
+                    (if (with-error-handling error (update timestep))
+                        (loop (time) 0.0)
+                        (update-loop (- buffer timestep)))
+                    (begin
+                      ;; We render upon every iteration of the loop, and
+                      ;; thus rendering is decoupled from updating.
+                      ;; It's possible to render multiple times before
+                      ;; an update is performed.
+                      (if (with-error-handling error
+                            (render (/ buffer timestep))
+                            (usleep 1))
+                          (loop (time) 0.0)
+                          (loop current-time buffer))))))))
+        (lambda (cont callback)
+          #f)))))
+
+;;; === end ===
+
+;;; === resume adapted from chickadee.scm ===
+
+;;; Commentary:
+;;
+;; Simple SDL + OpenGL game loop implementation.
+;;
+;;; Code:
 
 (define %time-freq (exact->inexact (sdl-performance-frequency)))
 
@@ -143,10 +239,15 @@
       (graphics-engine-reap! gfx))
     (define (render-sdl-opengl alpha)
       (with-graphics-state! ((g:viewport (atomic-box-ref default-viewport)))
-                            (clear-viewport)
+        (clear-viewport)
         (with-projection (atomic-box-ref default-projection)
           (draw alpha)))
       (sdl2:swap-gl-window (unwrap-window window)))
+    (define (on-error stack key args)
+      (error stack key args)
+      ;; Flush all input events that have occurred while in the error
+      ;; state.
+      (while (poll-event) #t))
     (dynamic-wind
       (const #t)
       (lambda ()
@@ -162,10 +263,10 @@
                        (current-error-port))))
           ;; Turn off multisampling by default.
           (gl-disable (version-1-3 multisample))
-          (load)
-          (run-game* #:update update-sdl
+          (run-game* #:init load
+                     #:update update-sdl
                      #:render render-sdl-opengl
-                     #:error error
+                     #:error (and error on-error)
                      #:time elapsed-time
                      #:update-hz update-hz)))
       (lambda ()
