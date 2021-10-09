@@ -33,6 +33,7 @@
 
   *actor/size*                 5
   *actor/color*                tango-light-chameleon
+  *actor/speed*                50
 
   *simulate/time-step*         1/10
 

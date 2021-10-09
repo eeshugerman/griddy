@@ -74,7 +74,7 @@
 
 (define (add-actors! world)
   (random-source-randomize! default-random-source)
-  (let* ((actors       (list-tabulate 100 (lambda (_) (make <actor> #:max-speed 50))))
+  (let* ((actors       (list-tabulate 100 (lambda (_) (make <actor>))))
          (segments     (get-road-segments world))
          (num-segments (length segments))
          (random-location

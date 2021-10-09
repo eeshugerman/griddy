@@ -340,7 +340,7 @@
   location
   (max-speed
    #:init-keyword #:max-speed
-   #:init-value 25) ;; units / second
+   #:init-value *actor/speed*) ;; units / second
   (route ;; 'none or list
          ;; '() means end of route
    #:init-form 'none)
