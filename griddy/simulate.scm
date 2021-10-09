@@ -3,7 +3,7 @@
   #:use-module (srfi srfi-69) ;; #:replace (make-hash-table)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
-  #:use-module (oop goops describe)
+  ;; #:use-module (chickadee)
   #:use-module (chickadee graphics path)
   #:use-module (griddy event-loop)
   #:use-module (griddy core)
@@ -113,19 +113,21 @@
       ((('travel-to dest) 'done) (end-route$        ++ actor))
       )))
 
+(define t0 0)
 (define world #f)
 (define skeleton-canvas #f)
 
 (define* (simulate make-skeleton add-actors!
                    #:key (width 500) (height 500) (length #f))
   (define (load)
+    (set! t0 (elapsed-time))
     (set! world (make-skeleton))
     (add-actors! world)
     (set! skeleton-canvas (make-skeleton-canvas world)))
 
 
   (define (update delta-t)
-    (if (and length (> (elapsed-time) (* 1000 length)))
+    (if (and length (> (- (elapsed-time) t0) length))
         (abort-game))
     (let* ((world++ (make-skeleton))
            (++ (make-++ world world++)))

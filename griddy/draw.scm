@@ -95,11 +95,13 @@
     (fill (circle (get-pos actor) *actor/size*))))
 
 (define (make-skeleton-canvas world)
-  (make-canvas (apply superimpose
-                      (append
-                       (map make-road-junction-painter (get-road-junctions world))
-                       (map make-road-segment-painter (get-road-segments world))))))
+  (make-canvas
+   (apply superimpose
+          (append
+           (map make-road-junction-painter (get-road-junctions world))
+           (map make-road-segment-painter (get-road-segments world))))))
 
 (define (make-actors-canvas world)
-  (make-canvas (apply superimpose
-                      (map make-actor-painter (get-actors world)))))
+  (make-canvas
+   (apply superimpose
+          (map make-actor-painter (get-actors world)))))

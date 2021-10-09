@@ -87,7 +87,14 @@
 
 (define game-loop-prompt-tag (make-prompt-tag 'game-loop))
 
+(define render-times '())
+(define update-times '())
+(define (avg l)
+  (/ (apply + l) (length l)))
+
 (define (abort-game)
+  (pk 'render-time (avg render-times))
+  (pk 'update-time (avg update-times))
   (abort-to-prompt game-loop-prompt-tag #f))
 
 (define current-timestep (make-parameter 0.0))
@@ -103,46 +110,42 @@
             (lambda (signum)
               (abort-game)))
           (init)
-          ;; A simple analogy is that we are filling up a bucket
-          ;; with water.  When the bucket fills up to a marked
-          ;; line, we dump it out.  Our water is time, and each
-          ;; time we dump the bucket we update the game.  Updating
-          ;; the game on a fixed timestep like this yields a
-          ;; stable simulation.
-          ;; (let loop ((previous-time (time))
-          ;;            (buffer 0.0))
-          ;;   (let* ((current-time (time))
-          ;;          (delta (- current-time previous-time)))
-          ;;     (let update-loop ((buffer (+ buffer delta)))
-          ;;       (if (>= buffer timestep)
-          ;;           ;; Short-circuit the update loop if an error
-          ;;           ;; occurred, and reset the current time to now in
-          ;;           ;; order to discard the undefined amount of time
-          ;;           ;; that was spent handling the error.
-          ;;           (if (with-error-handling error (update timestep))
-          ;;               (loop (time) 0.0)
-          ;;               (update-loop (- buffer timestep)))
-          ;;           (begin
-          ;;             ;; We render upon every iteration of the loop, and
-          ;;             ;; thus rendering is decoupled from updating.
-          ;;             ;; It's possible to render multiple times before
-          ;;             ;; an update is performed.
-          ;;             (if (with-error-handling error
-          ;;                   (render (/ buffer timestep))
-          ;;                   (usleep 1))
-          ;;                 (loop (time) 0.0)
-          ;;                 (loop current-time buffer)))))))
-          (let loop ((previous-time (time)))
-            (render 0) ;; todo: remove alpha arg
-            (let* ((current-time (time))
-                   (time-passed (- current-time previous-time)))
-              (if (> time-passed timestep)
-                  (begin
-                    (render 0) ;; todo: remove alpha arg
-                    (loop current-time))
-                  (begin
-                    (update)
-                    (loop previous-time))))))
+
+          (let loop ((previous-render-time (time))
+                     (need-update? #t))
+            (let* ((time-since-render (- (time) previous-render-time)))
+              (cond ((> time-since-render timestep)
+                     (when (> time-since-render (* 1.5 timestep))
+                       (pk 'warning 'over-time-budget (/ time-since-render timestep)))
+                     (with-error-handling error
+                       (define t0 (time))
+                       (render 0)  ;; todo: remove alpha arg
+                       (set! render-times (cons (- (time) t0)
+                                                render-times)))
+                     (loop (time) #t))
+                    (need-update?
+                     (with-error-handling error
+                       (define t0 (time))
+                       (update 0)  ;; todo: remove timestep arg
+                       (set! update-times (cons (- (time) t0)
+                                                update-times)))
+                     (loop previous-render-time #f))
+                    (else
+                     (loop previous-render-time #f)))))
+
+          ;; (while #t
+          ;;   (with-error-handling error
+          ;;     (define t0 (time))
+          ;;     (update 0)
+          ;;     (set! update-times (cons (- (time) t0)
+          ;;                              update-times))
+          ;;     (set! t0 (time))
+          ;;     (render 0)
+          ;;     (set! render-times (cons (- (time) t0)
+          ;;                              render-times))))
+          )
+
+
         (lambda (cont callback)
           #f)))))
 
