@@ -109,29 +109,40 @@
           ;; time we dump the bucket we update the game.  Updating
           ;; the game on a fixed timestep like this yields a
           ;; stable simulation.
-          (let loop ((previous-time (time))
-                     (buffer 0.0))
+          ;; (let loop ((previous-time (time))
+          ;;            (buffer 0.0))
+          ;;   (let* ((current-time (time))
+          ;;          (delta (- current-time previous-time)))
+          ;;     (let update-loop ((buffer (+ buffer delta)))
+          ;;       (if (>= buffer timestep)
+          ;;           ;; Short-circuit the update loop if an error
+          ;;           ;; occurred, and reset the current time to now in
+          ;;           ;; order to discard the undefined amount of time
+          ;;           ;; that was spent handling the error.
+          ;;           (if (with-error-handling error (update timestep))
+          ;;               (loop (time) 0.0)
+          ;;               (update-loop (- buffer timestep)))
+          ;;           (begin
+          ;;             ;; We render upon every iteration of the loop, and
+          ;;             ;; thus rendering is decoupled from updating.
+          ;;             ;; It's possible to render multiple times before
+          ;;             ;; an update is performed.
+          ;;             (if (with-error-handling error
+          ;;                   (render (/ buffer timestep))
+          ;;                   (usleep 1))
+          ;;                 (loop (time) 0.0)
+          ;;                 (loop current-time buffer)))))))
+          (let loop ((previous-time (time)))
+            (render 0) ;; todo: remove alpha arg
             (let* ((current-time (time))
-                   (delta (- current-time previous-time)))
-              (let update-loop ((buffer (+ buffer delta)))
-                (if (>= buffer timestep)
-                    ;; Short-circuit the update loop if an error
-                    ;; occurred, and reset the current time to now in
-                    ;; order to discard the undefined amount of time
-                    ;; that was spent handling the error.
-                    (if (with-error-handling error (update timestep))
-                        (loop (time) 0.0)
-                        (update-loop (- buffer timestep)))
-                    (begin
-                      ;; We render upon every iteration of the loop, and
-                      ;; thus rendering is decoupled from updating.
-                      ;; It's possible to render multiple times before
-                      ;; an update is performed.
-                      (if (with-error-handling error
-                            (render (/ buffer timestep))
-                            (usleep 1))
-                          (loop (time) 0.0)
-                          (loop current-time buffer))))))))
+                   (time-passed (- current-time previous-time)))
+              (if (> time-passed timestep)
+                  (begin
+                    (render 0) ;; todo: remove alpha arg
+                    (loop current-time))
+                  (begin
+                    (update)
+                    (loop previous-time))))))
         (lambda (cont callback)
           #f)))))
 
