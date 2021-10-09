@@ -4,6 +4,7 @@
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (oop goops describe)
+  #:use-module (chickadee graphics path)
   #:use-module (griddy event-loop)
   #:use-module (griddy core)
   #:use-module (griddy util)
@@ -113,12 +114,14 @@
       )))
 
 (define world #f)
+(define skeleton-canvas #f)
 
 (define* (simulate make-skeleton add-actors!
                    #:key (width 500) (height 500) (length #f))
   (define (load)
     (set! world (make-skeleton))
-    (add-actors! world))
+    (add-actors! world)
+    (set! skeleton-canvas (make-skeleton-canvas world)))
 
 
   (define (update delta-t)
@@ -132,11 +135,14 @@
        (get-actors world))
       (set! world world++)))
 
+  (define (draw alpha)
+    (draw-canvas skeleton-canvas)
+    (draw-canvas (make-actors-canvas world)))
+
   (run-game
    #:load load
    #:update update
    #:update-hz (recip *simulate/time-step*)
-   #:draw (lambda (alpha) (draw-world world))
-   ;; #:draw (lambda (alpha) 'pass)
+   #:draw draw
    #:window-width width
    #:window-height height))

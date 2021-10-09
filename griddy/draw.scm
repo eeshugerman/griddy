@@ -12,12 +12,11 @@
   #:use-module (griddy constants)
   #:use-module (griddy math)
   #:use-module (griddy util)
-  #:export (draw-world))
+  #:export (make-skeleton-canvas
+            make-actors-canvas))
 
 ;; TODO: Possible to use GOOPS?
 
-
-(define with-canvas (compose draw-canvas make-canvas))
 
 (define (angle-of vec)
   (atan (vec2-y vec) (vec2-x vec)))
@@ -31,8 +30,8 @@
     (cut translate place <>))
    painter))
 
-(define (draw-road-junction junction)
-  (define (draw-lane lane)
+(define (make-road-junction-painter junction)
+  (define (make-lane-painter lane)
     (let* ((curve (ref lane 'curve)))
       (with-style ((stroke-color *road-lane/color*))
         (stroke (path (move-to   (bezier-curve-p0 curve))
@@ -54,12 +53,12 @@
           (with-style ((fill-color *road-junction/color*))
             junction-painter))
 
-         (lane-painters (map draw-lane (get-lanes junction))))
-    (with-canvas (apply superimpose junction-painter lane-painters))))
+         (lane-painters (map make-lane-painter (get-lanes junction))))
+    (apply superimpose junction-painter lane-painters)))
 
 
-(define (draw-road-segment segment)
-  (define (draw-lane lane)
+(define (make-road-segment-painter segment)
+  (define (make-lane-painter lane)
     (let* ((lane-beg-pos  (get-pos lane 'beg))
            (lane-end-pos  (get-pos lane 'end))
            (lane-vec      (get-vec lane))
@@ -87,15 +86,20 @@
          (p-4           (vec2+ end-pos edge-offset))
          (road-painter  (with-style ((fill-color *road-segment/color*))
                           (fill (polyline p-1 p-2 p-3 p-4 p-1))))
-         (lane-painters (map draw-lane (get-lanes segment))))
+         (lane-painters (map make-lane-painter (get-lanes segment))))
 
-    (with-canvas (apply superimpose road-painter lane-painters))))
+    (apply superimpose road-painter lane-painters)))
 
-(define (draw-actor actor)
-  (with-canvas (with-style ((fill-color *actor/color*))
-                 (fill (circle (get-pos actor) *actor/size*)))))
+(define (make-actor-painter actor)
+  (with-style ((fill-color *actor/color*))
+    (fill (circle (get-pos actor) *actor/size*))))
 
-(define (draw-world world)
-  (for-each draw-road-junction (get-road-junctions world))
-  (for-each draw-road-segment (get-road-segments world))
-  (for-each draw-actor (get-actors world)))
+(define (make-skeleton-canvas world)
+  (make-canvas (apply superimpose
+                      (append
+                       (map make-road-junction-painter (get-road-junctions world))
+                       (map make-road-segment-painter (get-road-segments world))))))
+
+(define (make-actors-canvas world)
+  (make-canvas (apply superimpose
+                      (map make-actor-painter (get-actors world)))))
