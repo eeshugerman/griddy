@@ -30,7 +30,7 @@
             agenda-push!
             connect-all-lanes!
             get-actors
-            get-incoming-lanes
+            get-lanes
             get-lanes
             get-length
             get-midpoint
@@ -120,13 +120,13 @@
           pts-low
           pts-high)))
 
-(define-method (get-pos (lane <road-lane/segment>) (which <symbol>))
+(define-method (get-pos (lane <road-lane/segment>) (beg-or-end <symbol>))
   (vec2+ (get-pos (ref lane 'segment)
-                  (match-direction lane which (flip which)))
+                  (match-direction lane beg-or-end (flip beg-or-end)))
          (get-offset lane)))
 
-(define-method (get-pos (lane <road-lane/junction>) (which <symbol>))
-  ((match which
+(define-method (get-pos (lane <road-lane/junction>) (beg-or-end <symbol>))
+  ((match beg-or-end
      ('beg bezier-curve-p0)
      ('end bezier-curve-p3))
    (ref lane 'curve)))
@@ -225,10 +225,10 @@
 (define-method (get-ortho-vec (segment <road-segment>))
   (vec2-rotate (get-tangent-vec segment) pi/2))
 
-(define-method (get-pos (segment <road-segment>) (which <symbol>))
-  (let* ((junction (ref segment 'junction which))
+(define-method (get-pos (segment <road-segment>) (beg-or-end <symbol>))
+  (let* ((junction (ref segment 'junction beg-or-end))
          (offset   (vec2* (get-tangent-vec segment)
-                          (* (match which
+                          (* (match beg-or-end
                                ('beg +1)
                                ('end -1))
                              (get-radius junction)))))
@@ -388,42 +388,45 @@
 
 ;; -----------------------------------------------------------------------------
 (define-method (get-lanes (junction <road-junction>))
+  "get all junction lanes for a junction"
   (hash-table-keys (ref junction 'lane-map 'outputs)))
 
-(define-method (get-segment-lanes (junction <road-junction>))
-  (fold (lambda (segment lanes)
-          (append lanes (get-lanes segment)))
-        (list)
-        (ref junction 'segments)))
-
 (define (outgoing? lane junction)
+  "is `lane' outgoing or incoming w.r.t `junction'"
   (or (and (eq? (ref lane 'segment 'junction 'beg) junction)
            (eq? (ref lane 'direction) 'forw))
       (and (eq? (ref lane 'segment 'junction 'end) junction)
            (eq? (ref lane 'direction) 'back))))
 
-(define-method (get-incoming-lanes (junction <road-junction>))
-  (filter (negate (cut outgoing? <> junction))
-          (get-segment-lanes junction)))
+(define-method (get-segment-lanes (junction <road-junction>))
+  "get all segment lanes for a junction"
+  (fold (lambda (segment lanes)
+          (append lanes (get-lanes segment)))
+        (list)
+        (ref junction 'segments)))
 
-(define-method (get-outgoing-lanes (junction <road-junction>))
-  (filter (cut outgoing? <> junction)
+(define-method (get-segment-lanes (incoming-or-outgoing <symbol>)
+                                  (junction <road-junction>) )
+  "get all outgoing or all incoming segment lanes for a junction"
+  (filter ((match incoming-or-outgoing
+             ('incoming negate)
+             ('outgoing identity))
+           (cut outgoing? <> junction))
           (get-segment-lanes junction)))
 
 (define-method (get-junction-lanes (lane <road-lane/segment>))
+  "get the junction lanes that connect to INCOMING segment lane `lane'"
   (ref lane
        'segment
-       'junction
-       (match-direction lane 'end 'beg)
-       'lane-map
-       'inputs
+       'junction (match-direction lane 'end 'beg)
+       'lane-map 'inputs
        lane))
 
 (define-method (get-segment-lane (lane <road-lane/junction>))
+  "get the OUTGOING segment lanes that connect to junciton lane `lane'"
   (ref lane
        'junction
-       'lane-map
-       'outputs
+       'lane-map 'outputs
        lane))
 
 (define-method (connect! (in-lane <road-lane/segment>)
@@ -445,8 +448,8 @@
     (add! world junction-lane)))
 
 (define-method (connect-all-lanes! (junction <road-junction>) (world <world>))
-  (let* ((in-lanes  (get-incoming-lanes junction))
-         (out-lanes (get-outgoing-lanes junction)))
+  (let* ((in-lanes  (get-segment-lanes 'incoming junction))
+         (out-lanes (get-segment-lanes 'outgoing junction)))
     (for-each
      (lambda (in-lane)
        (for-each
