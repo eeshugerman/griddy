@@ -419,12 +419,13 @@
         (ref junction 'segments)))
 
 (define-method (get-junction-lanes (lane <road-lane/segment>))
-  "get the junction lanes that connect to INCOMING segment lane `lane'"
-  (ref lane
-       'segment
-       'junction (match-direction lane 'end 'beg)
-       'lane-map 'inputs
-       lane))
+  "get the junction lanes that connect to _incoming_ segment lane `lane'"
+  (ref/default lane
+               'segment
+               'junction (match-direction lane 'end 'beg)
+               'lane-map 'inputs
+               lane
+               '()))
 
 (define-method (get-segment-lane (lane <road-lane/junction>))
   "get the _outgoing_ segment lanes that connect to junciton lane `lane'"
@@ -442,11 +443,7 @@
             #:out-lane out-lane))
          (lane-maps
           (ref junction-lane 'junction 'lane-map)))
-    ;; insert! can't do defaults atm :(
-    (hash-table-update!/default (ref lane-maps 'inputs)
-                                in-lane
-                                (cut cons junction-lane <>)
-                                '())
+    (insert! (ref lane-maps 'inputs in-lane) junction-lane)
     (set! (ref lane-maps 'outputs junction-lane)
           out-lane)
     (add! world junction-lane)))

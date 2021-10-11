@@ -6,6 +6,7 @@
   #:use-module (ice-9 match)
   #:replace (set!)
   #:export (ref
+            ref/default
             match-direction
             extend
             extend!
@@ -34,6 +35,17 @@
    (else
     (slot-ref obj key))))
 
+(define (poly-ref/default obj key default)
+  (cond
+   ((list? obj)
+    (or (assq-ref obj key) default))
+   ((hash-table? obj)
+    (hash-table-ref/default obj key default))
+   (else
+    (if (slot-bound? obj key)
+        (slot-ref obj key)
+        default))))
+
 (define (ref obj . slots)
   (match slots
     ((slot)
@@ -41,6 +53,15 @@
     ((slots ... slot)
      (poly-ref (apply ref (cons obj slots))
                slot))))
+
+(define (ref/default . args)
+  (match args
+    ((obj slot default)
+     (poly-ref/default obj slot default))
+    ((obj slots ... slot default)
+     (poly-ref/default (apply ref (cons obj slots))
+                       slot
+                       default))))
 
 (define (poly-set! obj key val)
   (cond
@@ -65,11 +86,11 @@
     ((_ (ref obj slot) val)
      (poly-set! obj
                 slot
-                (cons val (ref obj slot))))
+                (cons val (ref/default obj slot '()))))
     ((_ (ref obj slots ... slot) val)
      (poly-set! (ref obj slots ...)
                 slot
-                (cons val (ref obj slots ... slot))))
+                (cons val (ref/default obj slots ... slot '()))))
     ((_ list' val)
      (set! list' (cons val list')))))
 
@@ -80,11 +101,11 @@
     ((_ (ref obj slot) vals ...)
      (poly-set! obj
                 slot
-                (extend (ref obj slot) vals ...)))
+                (extend (ref/default obj slot '()) vals ...)))
     ((_ (ref obj slots ... slot) vals ...)
      (poly-set! (ref obj slots ...)
                 slot
-                (extend (ref obj slots ... slot) vals ...)))))
+                (extend (ref/default obj slots ... slot '()) vals ...)))))
 
 (define-syntax-rule (match-direction lane if-forw if-back)
   (case (ref lane 'direction)
