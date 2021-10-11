@@ -30,14 +30,6 @@
   (define-method (neighbors (lane <road-lane/junction>))
     (list (get-segment-lane lane)))
 
-  ;; ;; skip junction lanes for now
-  ;; (define (neighbors lane)
-  ;;   (filter (cut neq? <> lane)
-  ;;           (get-outgoing-lanes (ref lane
-  ;;                                    'segment
-  ;;                                    'junction
-  ;;                                    (match-direction lane 'end 'beg)))))
-
   (define-generic cost)
   (define-method (cost (lane-1 <road-lane/segment>) (lane-2 <road-lane>))
     "actual cost of moving between neighboring nodes"

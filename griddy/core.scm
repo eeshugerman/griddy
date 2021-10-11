@@ -427,7 +427,7 @@
        lane))
 
 (define-method (get-segment-lane (lane <road-lane/junction>))
-  "get the OUTGOING segment lanes that connect to junciton lane `lane'"
+  "get the _outgoing_ segment lanes that connect to junciton lane `lane'"
   (ref lane
        'junction
        'lane-map 'outputs
