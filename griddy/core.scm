@@ -1,7 +1,5 @@
 (define-module (griddy core)
-  #:use-module ((srfi srfi-1) #:select (fold
-                                        first
-                                        last))
+  #:use-module ((srfi srfi-1) #:select (fold first last))
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
   #:use-module (ice-9 match)
@@ -29,6 +27,7 @@
             agenda-pop!
             agenda-push!
             connect-all!
+            connect-by-rank!
             get-actors
             get-lanes
             get-lanes
@@ -463,12 +462,19 @@
         (filter (cut neq? in-lane <>) out-lanes)))
      in-lanes)))
 
-;; (define-method (connect-by-rank! (junction <road-junction>) (world <world>))
-;;   (for-each
-;;    (lambda (in-segment)
-;;      (for-each
-;;       (lambda (out-segment)
-;;         (let loop ((in-lanes (get-lanes 'incoming junction in-segment)))))))))
+(define-method (connect-by-rank! (junction <road-junction>) (world <world>))
+  (for-each
+   (lambda (in-segment)
+     (for-each
+      (lambda (out-segment)
+        ((@ (srfi srfi-1) for-each)
+         (cut connect! <> <> world)
+         (reverse (get-lanes in-segment
+                             (get-direction 'incoming junction in-segment)))
+         (reverse (get-lanes out-segment
+                             (get-direction 'outgoing junction out-segment)))))
+      (ref junction 'segments)))
+   (ref junction 'segments)))
 
 ;; -----------------------------------------------------------------------------
 (define-method (link! (lane <road-lane/segment>) (segment <road-segment>))
