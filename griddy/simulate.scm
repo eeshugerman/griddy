@@ -113,38 +113,55 @@
       ((('travel-to dest) 'done) (end-route$        ++ actor))
       )))
 
-(define t0 0)
+(define sim-t0 0)
 (define world #f)
 (define skeleton-canvas #f)
 
+(define update-times '())
+(define draw-times '())
+(define (avg l)
+  (/ (apply + l) (length l)))
+
 (define* (simulate make-skeleton add-actors!
-                   #:key (width 500) (height 500) (length #f))
+                   #:key (width 500) (height 500) (duration #f))
   (define (load)
-    (set! t0 (elapsed-time))
+    (set! sim-t0 (elapsed-time))
     (set! world (make-skeleton))
     (add-actors! world)
     (set! skeleton-canvas (make-skeleton-canvas world)))
 
-
   (define (update delta-t)
-    (if (and length (> (- (elapsed-time) t0) length))
-        (abort-game))
-    (let* ((world++ (make-skeleton))
-           (++ (make-++ world world++)))
+    (if (and duration (> (- (elapsed-time) sim-t0) duration))
+        (quit))
+    (let* ((t0      (current-time))
+           (world++ (make-skeleton))
+           (++      (make-++ world world++)))
       (for-each
        ;; mutate `world++' via `++', inserting a new actor
        (cut advance$ ++ <>)
        (get-actors world))
-      (set! world world++)))
+      (set! world world++)
+      (insert! update-times (- (current-time) t0))))
 
   (define (draw alpha)
+    (define t0 (current-time))
     (draw-canvas skeleton-canvas)
-    (draw-canvas (make-actors-canvas world)))
+    (draw-canvas (make-actors-canvas world))
+    (insert! draw-times (- (current-time) t0)))
+
+  (define (quit)
+    (pk 'elapsed-time    (- (elapsed-time) sim-t0))
+    (pk 'avg-draw-time   (exact->inexact (avg draw-times)))
+    (pk 'avg-update-time (exact->inexact (avg update-times)))
+    (pk 'draw-count      (length draw-times))
+    (pk 'update-count    (length update-times))
+    (abort-game))
 
   (run-game
    #:load load
    #:update update
    #:update-hz (recip *simulate/time-step*)
    #:draw draw
+   #:quit quit
    #:window-width width
    #:window-height height))

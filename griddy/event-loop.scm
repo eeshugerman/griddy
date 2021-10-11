@@ -87,14 +87,7 @@
 
 (define game-loop-prompt-tag (make-prompt-tag 'game-loop))
 
-(define render-times '())
-(define update-times '())
-(define (avg l)
-  (/ (apply + l) (length l)))
-
 (define (abort-game)
-  (pk 'render-time (avg render-times))
-  (pk 'update-time (avg update-times))
   (abort-to-prompt game-loop-prompt-tag #f))
 
 (define current-timestep (make-parameter 0.0))
@@ -118,31 +111,19 @@
                      (when (> time-since-render (* 1.5 timestep))
                        (pk 'warning 'over-time-budget (/ time-since-render timestep)))
                      (with-error-handling error
-                       (define t0 (time))
-                       (render 0)  ;; todo: remove alpha arg
-                       (set! render-times (cons (- (time) t0)
-                                                render-times)))
+                       (render 0))  ;; todo: remove alpha arg
                      (loop (time) #t))
                     (need-update?
                      (with-error-handling error
-                       (define t0 (time))
-                       (update 0)  ;; todo: remove timestep arg
-                       (set! update-times (cons (- (time) t0)
-                                                update-times)))
+                       (update 0))  ;; todo: remove timestep arg
                      (loop previous-render-time #f))
                     (else
                      (loop previous-render-time #f)))))
 
           ;; (while #t
           ;;   (with-error-handling error
-          ;;     (define t0 (time))
           ;;     (update 0)
-          ;;     (set! update-times (cons (- (time) t0)
-          ;;                              update-times))
-          ;;     (set! t0 (time))
-          ;;     (render 0)
-          ;;     (set! render-times (cons (- (time) t0)
-          ;;                              render-times))))
+          ;;     (render 0)))
           )
 
 
