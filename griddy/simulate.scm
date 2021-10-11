@@ -19,16 +19,11 @@
 
 
 (define (make-++ world world++)
-  (define static-items-table
-    (let loop ((table   (make-hash-table eq?))
-               (items   (ref world 'static-items))
-               (items++ (ref world++ 'static-items)))
-      (match `(,items ,items++)
-        ((()())
-         table)
-        (((item rest ...) (item++ rest++ ...))
-         (hash-table-set! table item item++)
-         (loop table rest rest++)))))
+  (define static-items-table (make-hash-table eq?))
+  (for-each
+   (cut hash-table-set! static-items-table <> <>)
+   (ref world 'static-items)
+   (ref world++ 'static-items))
 
   (define actors-table ((@ (srfi srfi-69) make-hash-table) eq?))
 
