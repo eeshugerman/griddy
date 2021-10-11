@@ -460,6 +460,7 @@
      in-lanes)))
 
 (define-method (connect-by-rank! (junction <road-junction>) (world <world>))
+  "not quite right, but better than `connect-all!'"
   (for-each
    (lambda (in-segment)
      (for-each
