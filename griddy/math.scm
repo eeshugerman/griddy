@@ -8,6 +8,7 @@
             /2
             recip
             l2
+            origin
             vec2-rotate
             vec2+/many))
 
@@ -26,3 +27,5 @@
 
 (define (recip x)
   (/ 1 x))
+
+(define origin (vec2 0 0))

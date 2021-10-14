@@ -21,16 +21,6 @@
 (define (angle-of vec)
   (atan (vec2-y vec) (vec2-x vec)))
 
-
-(define (rotate-in-place angle place painter)
-  ;; TODO: transform with matrix3-rotate instead so that `place'
-  ;; is not needed
-  ((compose
-    (cut translate place <>)
-    (cut rotate angle <>)
-    (cut translate (vec2* place -1) <>))
-   painter))
-
 (define (make-road-junction-painter junction)
   (define (make-lane-painter lane)
     (let* ((curve (ref lane 'curve)))
@@ -39,22 +29,15 @@
                       (bezier-to (bezier-curve-p1 curve)
                                  (bezier-curve-p2 curve)
                                  (bezier-curve-p3 curve)))))))
-  (let* ((junction-painter
-          (fill (regular-polygon (ref junction 'pos)
-                                 4
-                                 ;; why 3/2??
-                                 ;; doesn't seem to be exact anyway
-                                 (* 3/2 (get-radius junction)))))
 
-         (junction-painter
-          (rotate-in-place pi/4
-                           (ref junction 'pos)
-                           junction-painter))
-         (junction-painter
-          (with-style ((fill-color *road-junction/color*))
-            junction-painter))
-
-         (lane-painters (map make-lane-painter (get-lanes junction))))
+  (let* ((size              (* 3/2 (get-radius junction))) ;; not exact
+         (junction-painter  (>> (regular-polygon origin 4 size)
+                              fill
+                              (cut rotate pi/4 <>)
+                              (cut translate (ref junction 'pos) <>)))
+         (junction-painter (with-style ((fill-color *road-junction/color*))
+                             junction-painter))
+         (lane-painters    (map make-lane-painter (get-lanes junction))))
     (apply superimpose junction-painter lane-painters)))
 
 
@@ -65,14 +48,12 @@
            (lane-vec      (get-vec lane))
            (line-painter  (stroke (line lane-beg-pos lane-end-pos)))
            (arrow-pos     (vec2+ lane-beg-pos (vec2* lane-vec 1/2)))
-           (arrow-painter (fill (regular-polygon arrow-pos
-                                                 3
-                                                 *road-lane/arrow-size*)))
-           ;; `rotate' rotates clockwise, triangle initially points upward
-           (arrow-painter (rotate-in-place (- pi/2  (angle-of lane-vec))
-                                           arrow-pos
-                                           arrow-painter)))
-
+           (arrow-painter (>> (regular-polygon origin 3 *road-lane/arrow-size*)
+                            fill
+                            ;; `rotate' rotates clockwise, triangle
+                            ;; initially points upward
+                            (cut rotate (- pi/2  (angle-of lane-vec)) <>)
+                            (cut translate arrow-pos <>))))
       (with-style ((stroke-color *road-lane/color*)
                    (fill-color *road-lane/color*))
         (superimpose line-painter arrow-painter))))

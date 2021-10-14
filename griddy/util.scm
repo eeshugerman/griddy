@@ -5,14 +5,15 @@
   #:use-module (oop goops)
   #:use-module (ice-9 match)
   #:replace (set!)
-  #:export (ref
-            ref/default
-            match-direction
-            extend
+  #:export (extend
             extend!
             flip
             insert!
-            neq?))
+            match-direction
+            neq?
+            >>
+            ref
+            ref/default))
 
 (define neq? (negate eq?))
 
@@ -111,3 +112,7 @@
   (case (ref lane 'direction)
     ((forw) if-forw)
     ((back) if-back)))
+
+(define (>> val . procs)
+  "like a shell pipe"
+  (fold (cut <> <>) val procs))
