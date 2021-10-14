@@ -3,7 +3,7 @@
 ;;   #:use-module (ice-9 match)
 ;;   #:use-module (oop goops)
 ;;   #:use-module (oop goops describe)
-;;   #:use-module (chickadee math path-finding)
+;;   #:use-module (chickadee data path-finding)
 ;;   #:use-module (griddy core)
 ;;   #:use-module (griddy util)
 ;;   #:use-module (griddy math)
@@ -18,7 +18,7 @@
 
 
 ;; workaround for goops/module funkiness
-(use-modules (chickadee math path-finding)
+(use-modules (chickadee data path-finding)
              (griddy math))
 
 ;; assumes all road have unbroken medians

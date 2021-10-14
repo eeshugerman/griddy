@@ -23,11 +23,12 @@
 
 
 (define (rotate-in-place angle place painter)
-  ;; why does this work?? should be backwards
+  ;; TODO: transform with matrix3-rotate instead so that `place'
+  ;; is not needed
   ((compose
-    (cut translate (vec2* place -1) <>)
+    (cut translate place <>)
     (cut rotate angle <>)
-    (cut translate place <>))
+    (cut translate (vec2* place -1) <>))
    painter))
 
 (define (make-road-junction-painter junction)
