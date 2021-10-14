@@ -1,11 +1,3 @@
-;; guix environment --load=guix.scm
-
-;; > guix describe
-;; guix a0178d3
-;; repository URL: https://git.savannah.gnu.org/git/guix.git
-;; branch: master
-;; commit: a0178d34f582b50e9bdbb0403943129ae5b560ff
-
 (use-modules (guix gexp)
              (guix packages)
              (guix build-system guile)
