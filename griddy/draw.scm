@@ -3,6 +3,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
   #:use-module (oop goops)
+  #:use-module (pipe)
   #:use-module (chickadee math)
   #:use-module (chickadee math bezier)
   #:use-module (chickadee math vector)
@@ -31,10 +32,10 @@
                                  (bezier-curve-p3 curve)))))))
 
   (let* ((size              (* 3/2 (get-radius junction))) ;; not exact
-         (junction-painter  (>> (regular-polygon origin 4 size)
-                              fill
-                              (cut rotate pi/4 <>)
-                              (cut translate (ref junction 'pos) <>)))
+         (junction-painter  (->> (regular-polygon origin 4 size)
+                                 (fill)
+                                 (rotate pi/4)
+                                 (translate (ref junction 'pos))))
          (junction-painter (with-style ((fill-color *road-junction/color*))
                              junction-painter))
          (lane-painters    (map make-lane-painter (get-lanes junction))))
@@ -48,12 +49,12 @@
            (lane-vec      (get-vec lane))
            (line-painter  (stroke (line lane-beg-pos lane-end-pos)))
            (arrow-pos     (vec2+ lane-beg-pos (vec2* lane-vec 1/2)))
-           (arrow-painter (>> (regular-polygon origin 3 *road-lane/arrow-size*)
-                            fill
-                            ;; `rotate' rotates clockwise, triangle
-                            ;; initially points upward
-                            (cut rotate (- pi/2  (angle-of lane-vec)) <>)
-                            (cut translate arrow-pos <>))))
+           (arrow-painter (->> (regular-polygon origin 3 *road-lane/arrow-size*)
+                               (fill)
+                               ;; `rotate' rotates clockwise, triangle
+                               ;; initially points upward
+                               (rotate (- pi/2  (angle-of lane-vec)))
+                               (translate arrow-pos))))
       (with-style ((stroke-color *road-lane/color*)
                    (fill-color *road-lane/color*))
         (superimpose line-painter arrow-painter))))

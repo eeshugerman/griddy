@@ -11,7 +11,6 @@
             insert!
             match-direction
             neq?
-            >>
             ref
             ref/default))
 
@@ -112,7 +111,3 @@
   (case (ref lane 'direction)
     ((forw) if-forw)
     ((back) if-back)))
-
-(define (>> val . procs)
-  "like a shell pipe"
-  (fold (cut <> <>) val procs))
