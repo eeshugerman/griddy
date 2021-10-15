@@ -31,7 +31,6 @@
             connect-by-rank!
             get-actors
             get-lanes
-            get-lanes
             get-length
             get-midpoint
             get-offset
@@ -57,7 +56,6 @@
 ;; these shouldn't be necessary :/
 (define-syntax-rule (set! args ...)
   ((@ (griddy util) set!) args ...))
-
 (define + (@ (griddy math) +))
 (define * (@ (griddy math) *))
 (define - (@ (griddy math) -))
@@ -115,11 +113,11 @@
 
 (define-method (get-length (lane <road-lane/junction>))
   "approximate"
-  (let* ((n           *road-lane/approx-pts*)
-         (1/n         (recip n))
-         (t->pt       (cut bezier-curve-point-at (ref lane 'curve) <>))
-         (pts-low     (map t->pt (iota n 0   1/n)))
-         (pts-high    (map t->pt (iota n 1/n 1/n))))
+  (let* ((n         *road-lane/approx-pts*)
+         (1/n       (recip n))
+         (t->pt     (cut bezier-curve-point-at (ref lane 'curve) <>))
+         (pts-low   (map t->pt (iota n 0   1/n)))
+         (pts-high  (map t->pt (iota n 1/n 1/n))))
 
     (fold (lambda (pt-low pt-high acc)
             (+ acc (vec2-magnitude (- pt-high pt-low))))
@@ -228,7 +226,7 @@
      (get-pos lane 'beg)))
 
 (define-method (get-tangent-vec (segment <road-segment>))
-                                        ; can't use `get-vec' because recursive loop
+  ; can't use `get-vec' because recursive loop
   (vec2-normalize (- (ref segment 'junction 'end 'pos)
                      (ref segment 'junction 'beg 'pos))))
 
