@@ -4,6 +4,7 @@
   #:use-module (srfi srfi-69)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
+  #:use-module (pipe)
   #:use-module (chickadee math vector)
   #:use-module (chickadee math bezier)
   #:use-module (griddy util)
@@ -78,11 +79,14 @@
 
 (define-method (initialize (self <road-lane/junction>) initargs)
   (define (get-junction lane lane-type)
-    (ref lane 'segment 'junction (match `(,lane-type ,(ref lane 'direction))
-                                   (('in  'forw) 'end)
-                                   (('in  'back) 'beg)
-                                   (('out 'forw) 'beg)
-                                   (('out 'back) 'end))))
+    (ref lane
+         'segment
+         'junction
+         (match `(,lane-type ,(ref lane 'direction))
+           (('in  'forw) 'end)
+           (('in  'back) 'beg)
+           (('out 'forw) 'beg)
+           (('out 'back) 'end))))
 
   (let ((in-lane  (get-keyword #:in-lane initargs))
         (out-lane (get-keyword #:out-lane initargs)))
@@ -143,17 +147,20 @@
 
          (v-ortho         (get-ortho-vec segment))
 
-         (v-segment-edge  (vec2* v-ortho
-                                 (* *road-lane/width*
-                                    (get-lane-count segment)
-                                    -1/2)))
-         (v-lane-edge     (vec2+ v-segment-edge
-                                 (vec2* v-ortho
-                                        (* *road-lane/width*
-                                           lane-count-from-edge))))
-         (v-lane-center   (vec2+ v-lane-edge
-                                 (vec2* v-ortho (* *road-lane/width*
-                                                   1/2)))))
+         (v-segment-edge  (->> (get-lane-count segment)
+                               (* -1/2)
+                               (* *road-lane/width*)
+                               (vec2* v-ortho)))
+
+         (v-lane-edge     (->> lane-count-from-edge
+                               (* *road-lane/width*)
+                               (vec2* v-ortho)
+                               (vec2+ v-segment-edge)))
+
+         (v-lane-center   (->> *road-lane/width*
+                               (* 1/2)
+                               (vec2* v-ortho)
+                               (vec2+ v-lane-edge))))
     v-lane-center))
 
 (define make-hash-table (@ (srfi srfi-69) make-hash-table))
@@ -174,9 +181,13 @@
 (define-method (get-radius (junction <road-junction>))
   "<air-quote>radius</air-quote>"
   (let* ((max-segment-lane-count
-          (apply max (map get-lane-count (ref junction 'segments))))
+          (->> (ref junction 'segments)
+               (map get-lane-count)
+               (apply max)))
          (wiggle-factor
-          (+ 1 (/ *road-segment/wiggle-room-%* 100))))
+          (-> *road-segment/wiggle-room-%*
+              (/ 100)
+              (+ 1))))
     (* wiggle-factor
        1/2
        max-segment-lane-count
@@ -226,11 +237,11 @@
 
 (define-method (get-pos (segment <road-segment>) (beg-or-end <symbol>))
   (let* ((junction (ref segment 'junction beg-or-end))
-         (offset   (vec2* (get-tangent-vec segment)
-                          (* (match beg-or-end
-                               ('beg +1)
-                               ('end -1))
-                             (get-radius junction)))))
+         (offset   (-> (get-tangent-vec segment)
+                       (vec2* (match beg-or-end
+                                ('beg +1)
+                                ('end -1)))
+                       (vec2* (get-radius junction)))))
     (vec2+ (ref junction 'pos) offset)))
 
 (define-method (get-lane-count (segment <road-segment>))
