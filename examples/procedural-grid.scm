@@ -1,5 +1,3 @@
-;;; GUILE_LOAD_PATH="$(pwd)" guile examples/procedural-grid.scm
-
 (use-modules (oop goops)
              (ice-9 match)
              (srfi srfi-1)
