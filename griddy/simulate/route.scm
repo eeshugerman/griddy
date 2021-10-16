@@ -4,17 +4,13 @@
 ;;   #:use-module (oop goops)
 ;;   #:use-module (oop goops describe)
 ;;   #:use-module (chickadee data path-finding)
-;;   #:use-module (griddy core)
+;;   #:use-module (griddy constants)
 ;;   #:use-module (griddy util)
 ;;   #:use-module (griddy math)
-;;   #:duplicates (warn merge-generics)
+;;   #:use-module (griddy core)
 ;;   #:export (find-route
 ;;             advance-on-route$
-;;             next-step)
-;;   #:re-export (<actor>
-;;                <location>
-;;                <location/on-road>
-;;                <location/off-road>))
+;;             next-step))
 
 
 ;; workaround for goops/module funkiness
@@ -36,15 +32,15 @@
     ;; TODO: not sure about this
     (get-length (ref lane-1 'segment)))
 
-    (define-method (cost (lane-1 <road-lane/junction>) (lane-2 <road-lane>))
-      "actual cost of moving between neighboring nodes"
-      ;; TODO: not sure about this
-      0)
+  (define-method (cost (lane-1 <road-lane/junction>) (lane-2 <road-lane>))
+    "actual cost of moving between neighboring nodes"
+    ;; TODO: not sure about this
+    0)
 
-    (define (distance lane-1 lane-2)
-      "approximate cost of moving between nodes"
-      (l2 (get-midpoint lane-1)
-          (get-midpoint lane-2)))
+  (define (distance lane-1 lane-2)
+    "approximate cost of moving between nodes"
+    (l2 (get-midpoint lane-1)
+        (get-midpoint lane-2)))
 
   (let* ((lanes (a* (make-path-finder)
                     (ref init 'road-lane)

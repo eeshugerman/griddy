@@ -4,7 +4,6 @@
              (srfi srfi-26)
              (srfi srfi-27)
              (griddy core)
-             (griddy util)
              (griddy simulate))
 
 (for-each (compose reload-module resolve-module)

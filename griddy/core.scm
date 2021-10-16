@@ -7,10 +7,9 @@
   #:use-module (pipe)
   #:use-module (chickadee math vector)
   #:use-module (chickadee math bezier)
-  #:use-module (griddy util)
   #:use-module (griddy constants)
+  #:use-module (griddy util)
   #:use-module (griddy math)
-  #:duplicates (merge-generics)
   #:export (<actor>
             <location/off-road>
             <location/on-road>
