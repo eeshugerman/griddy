@@ -6,12 +6,6 @@
              (griddy core)
              (griddy simulate))
 
-(for-each (compose reload-module resolve-module)
-          '((griddy core)
-            (griddy util)
-            (griddy draw)
-            (griddy simulate)))
-
 (define (random-bool)
   (even? (random-integer 2)))
 

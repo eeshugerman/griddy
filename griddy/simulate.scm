@@ -10,12 +10,8 @@
   #:use-module (griddy math)
   #:use-module (griddy core)
   #:use-module (griddy event-loop)
-  ;; #:use-module (griddy simulate route)
+  #:use-module (griddy simulate route)
   #:export (simulate))
-
-;; workaround for goops/module funkiness
-(include "simulate/route.scm")
-
 
 (define (make-++ world world++)
   (define static-items-table (make-hash-table eq?))

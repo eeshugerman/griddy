@@ -1,21 +1,15 @@
-;; (define-module (griddy simulate route)
-;;   #:use-module (srfi srfi-26)
-;;   #:use-module (ice-9 match)
-;;   #:use-module (oop goops)
-;;   #:use-module (oop goops describe)
-;;   #:use-module (chickadee data path-finding)
-;;   #:use-module (griddy constants)
-;;   #:use-module (griddy util)
-;;   #:use-module (griddy math)
-;;   #:use-module (griddy core)
-;;   #:export (find-route
-;;             advance-on-route$
-;;             next-step))
-
-
-;; workaround for goops/module funkiness
-(use-modules (chickadee data path-finding)
-             (griddy math))
+(define-module (griddy simulate route)
+  #:use-module (srfi srfi-26)
+  #:use-module (ice-9 match)
+  #:use-module (oop goops)
+  #:use-module (chickadee data path-finding)
+  #:use-module (griddy constants)
+  #:use-module (griddy util)
+  #:use-module (griddy math)
+  #:use-module (griddy core)
+  #:export (find-route
+            advance-on-route$
+            next-step))
 
 ;; assumes all road have unbroken medians
 (define-method (find-route (init <location/on-road>) (dest <location/on-road>))
