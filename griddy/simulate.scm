@@ -108,14 +108,14 @@
       ((('travel-to dest) 'done) (end-route$        ++ actor))
       )))
 
-(define sim-t0 0)
 (define world #f)
 (define skeleton-canvas #f)
 
+;; todo: use new `current-timestep' param?
+(define sim-t0 0)
+
 (define update-times '())
 (define draw-times '())
-(define (avg l)
-  (/ (apply + l) (length l)))
 
 (define* (simulate make-skeleton add-actors!
                    #:key (width 500) (height 500) (duration #f))
@@ -145,6 +145,7 @@
     (insert! draw-times (- (current-time) t0)))
 
   (define (quit)
+    (define (avg l) (/ (apply + l) (length l)))
     (pk 'elapsed-time    (- (elapsed-time) sim-t0))
     (pk 'avg-draw-time   (exact->inexact (avg draw-times)))
     (pk 'avg-update-time (exact->inexact (avg update-times)))
