@@ -8,7 +8,6 @@
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
-  #:use-module (griddy core position)
   #:export (<road-junction>
             <road-lane>
             <road-segment>
@@ -38,35 +37,6 @@
 (define-class <road-lane/junction> (<road-lane>)
   (junction #:init-keyword #:junction)
   curve)
-
-(define-method (initialize (self <road-lane/junction>) initargs)
-  (define (get-junction lane lane-type)
-    (ref lane
-         'segment
-         'junction
-         (match `(,lane-type ,(ref lane 'direction))
-           (('in  'forw) 'end)
-           (('in  'back) 'beg)
-           (('out 'forw) 'beg)
-           (('out 'back) 'end))))
-
-  (let ((in-lane  (get-keyword #:in-lane initargs))
-        (out-lane (get-keyword #:out-lane initargs)))
-    (unless (eq? (get-junction in-lane 'in)
-                 (get-junction out-lane 'out))
-      (throw 'no-connection in-lane out-lane))
-    (let* ((junction (get-junction in-lane 'in))
-           (offset   (* 2
-                        (get-radius junction)
-                        (/ *road-segment/wiggle-room-%* 100)))
-           (p0       (get-pos in-lane  'end))
-           (p3       (get-pos out-lane 'beg))
-           (p1       (+ p0 (* offset (get-tangent-vec in-lane))))
-           (p2       (- p3 (* offset (get-tangent-vec out-lane))))
-           (curve    (make-bezier-curve p0 p1 p2 p3)))
-      (set! (ref self 'junction) junction)
-      (set! (ref self 'curve) curve)))
-  (next-method))
 
 (define-class <road-junction> (<static>)
   pos ;; vec2

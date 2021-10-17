@@ -10,9 +10,10 @@
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
-  #:use-module (griddy core actor)
-  #:use-module (griddy core position)
   #:use-module (griddy core static)
+  #:use-module (griddy core dimension)
+  #:use-module (griddy core position)
+  #:use-module (griddy core actor)
   #:export (
             <point-like>
             <route>
@@ -46,14 +47,16 @@
                <location>
                off-road->on-road
                on-road->off-road
-               get-midpoint
                get-pos
-               get-radius
-               get-radius
-               get-width
-               get-length
+               get-midpoint
                get-vec
                get-ortho-vec
+               get-tangent-vec
+
+               ;; (griddy core dimension)
+               get-length
+               get-width
+               get-radius
 
                ;; (griddy core actor)
                <actor>
@@ -64,13 +67,6 @@
 
 (util:extend-primitives!)
 (math:extend-primitives!)
-
-(define-method (add-lane-set-rank! (segment <road-segment>) (lane <road-lane/segment>))
-  (let* ((direction (ref lane 'direction))
-         (rank      (ref segment 'lane-count direction)))
-    (set! (ref lane 'rank) rank)
-    (set! (ref segment 'lane-count direction) (+ 1 rank))
-    (extend! (ref segment 'lanes direction) lane)))
 
 (define-class <world> ()
   (static-items ;; roads, etc
@@ -142,16 +138,13 @@
 (define-method (connect! (in-lane <road-lane/segment>)
                          (out-lane <road-lane/segment>)
                          (world <world>))
-  (let* ((junction-lane
-          (make <road-lane/junction>
-            #:in-lane  in-lane
-            #:out-lane out-lane))
-         (lane-maps
-          (ref junction-lane 'junction 'lane-map)))
-    (insert! (ref lane-maps 'inputs in-lane) junction-lane)
-    (set! (ref lane-maps 'outputs junction-lane)
-          out-lane)
-    (add! world junction-lane)))
+  (let ((junction-lane (make <road-lane/junction>)))
+    (link! in-lane junction-lane out-lane)
+    (let ((lane-maps (ref junction-lane 'junction 'lane-map)))
+      (insert! (ref lane-maps 'inputs in-lane) junction-lane)
+      (set! (ref lane-maps 'outputs junction-lane)
+            out-lane)
+      (add! world junction-lane))))
 
 (define-method (connect-all! (junction <road-junction>) (world <world>))
   (let* ((in-lanes  (get-segment-lanes 'incoming junction))
@@ -184,7 +177,11 @@
   (if (slot-bound? lane 'segment)
       (throw 'lane-already-linked lane segment))
   (set! (ref lane 'segment) segment)
-  (add-lane-set-rank! segment lane))
+  (let* ((direction (ref lane 'direction))
+         (rank      (ref segment 'lane-count direction)))
+    (set! (ref lane 'rank) rank)
+    (set! (ref segment 'lane-count direction) (+ 1 rank))
+    (extend! (ref segment 'lanes direction) lane)))
 
 (define-method (link! (junction-1 <road-junction>)
                       (segment    <road-segment>)
@@ -201,6 +198,34 @@
 (define-method (link! (actor <actor>) (loc <location/on-road>))
   (set! (ref actor 'location) loc)
   (insert! (ref loc 'road-lane 'actors) actor))
+
+(define-method (link! (in-lane <road-lane/segment>)
+                      (junction-lane <road-lane/junction>)
+                      (out-lane <road-lane/segment>))
+  (define (get-junction lane lane-type)
+    (ref lane
+         'segment
+         'junction
+         (match `(,lane-type ,(ref lane 'direction))
+           (('in  'forw) 'end)
+           (('in  'back) 'beg)
+           (('out 'forw) 'beg)
+           (('out 'back) 'end))))
+
+  (unless (eq? (get-junction in-lane 'in)
+               (get-junction out-lane 'out))
+    (throw 'no-connection in-lane out-lane))
+  (let* ((junction (get-junction in-lane 'in))
+         (offset   (* 2
+                      (get-radius junction)
+                      (/ *road-segment/wiggle-room-%* 100)))
+         (p0       (get-pos in-lane  'end))
+         (p3       (get-pos out-lane 'beg))
+         (p1       (+ p0 (* offset (get-tangent-vec in-lane))))
+         (p2       (- p3 (* offset (get-tangent-vec out-lane))))
+         (curve    (make-bezier-curve p0 p1 p2 p3)))
+    (set! (ref junction-lane 'junction) junction)
+    (set! (ref junction-lane 'curve) curve)))
 
 (define-method (add! (world <world>) (static-item <static>))
   (insert! (ref world 'static-items) static-item))
