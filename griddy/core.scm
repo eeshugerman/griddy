@@ -11,8 +11,7 @@
   #:use-module (griddy util)
   #:use-module (griddy math)
   #:use-module (griddy core static)
-  #:use-module (griddy core dimension)
-  #:use-module (griddy core position)
+  #:use-module (griddy core spatial)
   #:use-module (griddy core location)
   #:use-module (griddy core actor)
   #:export (
@@ -47,14 +46,12 @@
                off-road->on-road
                on-road->off-road
 
-               ;; (griddy core position)
+               ;; (griddy core spatial)
                get-pos
                get-midpoint
                get-vec
                get-ortho-vec
                get-tangent-vec
-
-               ;; (griddy core dimension)
                get-length
                get-width
                get-radius
