@@ -52,12 +52,8 @@
             route-pop!
             route-reset!))
 
-;; these shouldn't be necessary :/
-(define-syntax-rule (set! args ...)
-  ((@ (griddy util) set!) args ...))
-(define + (@ (griddy math) +))
-(define * (@ (griddy math) *))
-(define - (@ (griddy math) -))
+(util:extend-primitives!)
+(math:extend-primitives!)
 
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())

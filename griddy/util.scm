@@ -4,15 +4,16 @@
   #:use-module (srfi srfi-69)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
-  #:replace (set!)
   #:export (extend
             extend!
             flip
+            griddy:set!
             insert!
             match-direction
             neq?
             ref
-            ref/default))
+            ref/default
+            util:extend-primitives!))
 
 (define neq? (negate eq?))
 
@@ -72,7 +73,7 @@
    (else
     (slot-set! obj key val))))
 
-(define-syntax set!
+(define-syntax griddy:set!
   (syntax-rules (ref)
     ((_ (ref obj slot) val)
      (poly-set! obj slot val))
@@ -96,8 +97,6 @@
 
 (define-syntax extend!
   (syntax-rules (ref)
-    ((_ list' vals ...)
-     (set! list' (extend list' vals ...)))
     ((_ (ref obj slot) vals ...)
      (poly-set! obj
                 slot
@@ -105,9 +104,15 @@
     ((_ (ref obj slots ... slot) vals ...)
      (poly-set! (ref obj slots ...)
                 slot
-                (extend (ref/default obj slots ... slot '()) vals ...)))))
+                (extend (ref/default obj slots ... slot '()) vals ...)))
+    ((_ list' vals ...)
+     (set! list' (extend list' vals ...)))))
 
 (define-syntax-rule (match-direction lane if-forw if-back)
   (case (ref lane 'direction)
     ((forw) if-forw)
     ((back) if-back)))
+
+(define-macro (util:extend-primitives!)
+  '(define-syntax-rule (set! args ...)
+     (griddy:set! args ...)))

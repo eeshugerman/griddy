@@ -13,6 +13,8 @@
   #:use-module (griddy simulate route)
   #:export (simulate))
 
+(util:extend-primitives!)
+
 (define (make-++ world world++)
   (define static-items-table (make-hash-table eq?))
   (for-each
