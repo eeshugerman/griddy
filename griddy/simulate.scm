@@ -1,4 +1,5 @@
 (define-module (griddy simulate)
+  #:duplicates (merge-generics)
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
   #:use-module (ice-9 match)
@@ -9,11 +10,14 @@
   #:use-module (griddy draw)
   #:use-module (griddy math)
   #:use-module (griddy core)
+  #:use-module (griddy core actor)
   #:use-module (griddy event-loop)
   #:use-module (griddy simulate route)
   #:export (simulate))
 
 (util:extend-primitives!)
+
+(define make-hash-table (@ (srfi srfi-69) make-hash-table))
 
 (define (make-++ world world++)
   (define static-items-table (make-hash-table eq?))
@@ -22,7 +26,7 @@
    (ref world 'static-items)
    (ref world++ 'static-items))
 
-  (define actors-table ((@ (srfi srfi-69) make-hash-table) eq?))
+  (define actors-table (make-hash-table eq?))
 
   (define-generic ++)
 

@@ -4,6 +4,7 @@
              (srfi srfi-26)
              (srfi srfi-27)
              (griddy core)
+             (griddy core actor)
              (griddy simulate))
 
 (define (random-bool)

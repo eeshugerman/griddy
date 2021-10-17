@@ -1,4 +1,5 @@
 (define-module (griddy draw)
+  #:duplicates (merge-generics)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
@@ -10,11 +11,14 @@
   #:use-module (chickadee math matrix)
   #:use-module (chickadee graphics path)
   #:use-module (griddy core)
+  #:use-module (griddy core actor)
   #:use-module (griddy constants)
   #:use-module (griddy math)
   #:use-module (griddy util)
   #:export (make-skeleton-canvas
             make-actors-canvas))
+
+(define map (@ (guile) map))
 
 (define (angle-of vec)
   (atan (vec2-y vec) (vec2-x vec)))

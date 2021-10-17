@@ -1,4 +1,5 @@
 (define-module (griddy core)
+  #:duplicates (merge-generics)
   #:use-module ((srfi srfi-1) #:select (fold first last))
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
@@ -10,8 +11,8 @@
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
-  #:export (<actor>
-            <location/off-road>
+  #:use-module (griddy core actor)
+  #:export (<location/off-road>
             <location/on-road>
             <location>
             <point-like>
@@ -24,8 +25,6 @@
             <static>
             <world>
             add!
-            agenda-pop!
-            agenda-push!
             connect-all!
             connect-by-rank!
             get-actors
@@ -48,12 +47,11 @@
             get-width
             link!
             off-road->on-road
-            on-road->off-road
-            route-pop!
-            route-reset!))
+            on-road->off-road))
 
 (util:extend-primitives!)
 (math:extend-primitives!)
+(define make-hash-table (@ (srfi srfi-69) make-hash-table))
 
 ;; classes ---------------------------------------------------------------------
 (define-class <static> ())
@@ -159,8 +157,6 @@
                                 *road-lane/width*
                                 v-ortho))))
     v-lane-center))
-
-(define make-hash-table (@ (srfi srfi-69) make-hash-table))
 
 (define-class <road-junction> (<static>)
   pos ;; vec2
@@ -342,34 +338,6 @@
     (make <location/on-road>
       #:pos-param pos-param
       #:road-lane road-lane)))
-
-(define-class <actor> ()
-  location
-  (max-speed
-   #:init-keyword #:max-speed
-   #:init-value *actor/speed*) ;; units / second
-  (route ;; 'none or list
-   ;; '() means end of route
-   #:init-form 'none)
-  (agenda
-   #:init-thunk list))
-
-(define-method (get-pos (actor <actor>))
-  (get-pos (ref actor 'location)))
-
-(define-method (agenda-push! (actor <actor>) item)
-  (extend! (ref actor 'agenda) item))
-
-(define-method (agenda-pop! (actor <actor>))
-  (let ((current-agenda (ref actor 'agenda)))
-    (set! (ref actor 'agenda) (cdr current-agenda))
-    (car current-agenda)))
-
-(define-method (route-pop! (actor <actor>))
-  (set! (ref actor 'route) (cdr (ref actor 'route))))
-
-(define-method (route-reset! (actor <actor>))
-  (set! (ref actor 'route) 'none))
 
 (define-class <world> ()
   (static-items ;; roads, etc
