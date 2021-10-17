@@ -12,6 +12,7 @@
   #:use-module (griddy math)
   #:use-module (griddy core static)
   #:use-module (griddy core position)
+  #:use-module (griddy core location)
   #:export (get-length
             get-width
             get-radius))

@@ -13,6 +13,7 @@
   #:use-module (griddy core static)
   #:use-module (griddy core dimension)
   #:use-module (griddy core position)
+  #:use-module (griddy core location)
   #:use-module (griddy core actor)
   #:export (
             <point-like>
@@ -22,13 +23,11 @@
             connect-all!
             connect-by-rank!
             get-actors
-            get-outgoing-lanes
             get-junction-lanes
             get-road-junctions
             get-road-lanes
             get-road-segments
             get-segment-lane
-            get-segment-lanes
             link!
             )
   #:re-export (
@@ -41,12 +40,14 @@
                <static>
                get-lanes
 
-               ;; (griddy core position)
-               <location/off-road>
-               <location/on-road>
+               ;; (griddy core location)
                <location>
+               <location/on-road>
+               <location/off-road>
                off-road->on-road
                on-road->off-road
+
+               ;; (griddy core position)
                get-pos
                get-midpoint
                get-vec
