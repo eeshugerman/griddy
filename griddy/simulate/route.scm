@@ -8,7 +8,6 @@
   #:use-module (griddy util)
   #:use-module (griddy math)
   #:use-module (griddy core)
-  #:use-module (griddy core actor)
   #:export (find-route
             advance-on-route$
             next-step))

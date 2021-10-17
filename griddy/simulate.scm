@@ -10,7 +10,6 @@
   #:use-module (griddy draw)
   #:use-module (griddy math)
   #:use-module (griddy core)
-  #:use-module (griddy core actor)
   #:use-module (griddy event-loop)
   #:use-module (griddy simulate route)
   #:export (simulate))

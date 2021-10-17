@@ -11,7 +11,6 @@
   #:use-module (chickadee math matrix)
   #:use-module (chickadee graphics path)
   #:use-module (griddy core)
-  #:use-module (griddy core actor)
   #:use-module (griddy constants)
   #:use-module (griddy math)
   #:use-module (griddy util)

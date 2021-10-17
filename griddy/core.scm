@@ -53,7 +53,14 @@
                get-width
                get-length
                get-vec
-               get-ortho-vec))
+               get-ortho-vec
+
+               ;; (griddy core actor)
+               <actor>
+               agenda-pop!
+               agenda-push!
+               route-pop!
+               route-reset!))
 
 (util:extend-primitives!)
 (math:extend-primitives!)
