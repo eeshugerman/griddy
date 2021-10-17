@@ -1,7 +1,7 @@
 (define-module (griddy draw)
   #:duplicates (merge-generics)
   #:use-module (ice-9 match)
-  #:use-module (srfi srfi-1)
+  ;; #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
   #:use-module (oop goops)
   #:use-module (pipe)
@@ -18,7 +18,7 @@
   #:export (make-skeleton-canvas
             make-actors-canvas))
 
-(define map (@ (guile) map))
+;; (define map (@ (guile) map))
 
 (define (angle-of vec)
   (atan (vec2-y vec) (vec2-x vec)))
