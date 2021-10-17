@@ -10,7 +10,7 @@
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
-  #:use-module (griddy core static)
+  #:use-module (griddy core road)
   #:use-module (griddy core actor)
   #:use-module (griddy core location)
   #:export (get-length
@@ -65,7 +65,7 @@
        max-segment-lane-count
        *road-lane/width*)))
 
-(define-method (get-midpoint (straight-thing <static>))
+(define-method (get-midpoint (straight-thing <road-component>))
   (+ (get-pos straight-thing 'beg)
      (* 1/2 (get-vec straight-thing))))
 

@@ -1,5 +1,5 @@
-(define-module (griddy core static)
-  #:duplicates (merge-generics)
+(define-module (griddy core road)
+  #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
@@ -8,23 +8,29 @@
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
-  #:export (<road-junction>
+  #:use-module (griddy core world)
+  #:duplicates (merge-generics)
+  #:export (<road-component>
+            <road-junction>
             <road-lane>
             <road-segment>
             <road-lane/segment>
             <road-lane/junction>
-            <static>
+            add!
             get-lanes
-            get-lane-count))
+            get-lane-count
+            get-road-lanes
+            get-road-junctions
+            get-road-segments))
 
 (util:extend-primitives!)
 (math:extend-primitives!)
 
 (define make-hash-table (@ (srfi srfi-69) make-hash-table))
 
-(define-class <static> ())
+(define-class <road-component> (<static-item>))
 
-(define-class <road-lane> (<static>)
+(define-class <road-lane> (<road-component> <actor-container>)
   (actors
    #:init-thunk list))
 
@@ -38,7 +44,7 @@
   (junction #:init-keyword #:junction)
   curve)
 
-(define-class <road-junction> (<static>)
+(define-class <road-junction> (<road-component>)
   pos ;; vec2
   (segments
    #:init-thunk list)
@@ -51,7 +57,7 @@
                               (get-keyword #:y initargs)))
   (next-method))
 
-(define-class <road-segment> (<static>)
+(define-class <road-segment> (<road-component> <actor-container>)
   (actors ;; off-road only, otherwise they belong to lanes
    #:init-thunk list)
   (junction
@@ -90,3 +96,28 @@
 
 (define-method (get-lane-count (segment <road-segment>) (direction <symbol>))
   (ref segment 'lane-count direction))
+
+
+;; why does this throw warning even with #:duplicates (merge-generics)?
+(define-method (add! (world <world>) (segment <road-segment>))
+  (cond
+   ((or (null? (ref segment 'junction 'beg))
+        (null? (ref segment 'junction 'end)))
+    (throw 'unlinked-road-segment))
+   ((and (null? (ref segment 'lanes 'forw))
+         (null? (ref segment 'lanes 'back)))
+    (throw 'road-segment-has-no-lanes))
+   (else
+    (next-method))))
+
+(define-method (get-road-lanes (world <world>))
+  (filter (cut is-a? <> <road-lane>)
+          (ref world 'static-items)))
+
+(define-method (get-road-junctions (world <world>))
+  (filter (cut is-a? <> <road-junction>)
+          (ref world 'static-items)))
+
+(define-method (get-road-segments (world <world>))
+  (filter (cut is-a? <> <road-segment>)
+          (ref world 'static-items)))

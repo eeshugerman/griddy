@@ -35,7 +35,7 @@
   (define-method (++ (list' <list>))
     (map ++ list'))
 
-  (define-method (++ (item <static>))
+  (define-method (++ (item <static-item>))
     (hash-table-ref static-items-table item))
 
   (define-method (++ (location <location/on-road>))

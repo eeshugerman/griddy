@@ -3,7 +3,8 @@
   #:use-module (ice-9 match)
   #:use-module ((srfi srfi-1) #:select (first last))
   #:use-module (griddy util)
-  #:use-module (griddy core static)
+  #:use-module (griddy core road)
+  #:duplicates (merge-generics)
   #:export (<location/off-road>
             <location/on-road>
             <location>

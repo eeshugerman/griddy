@@ -1,5 +1,4 @@
 (define-module (griddy core)
-  #:duplicates (merge-generics)
   #:use-module ((srfi srfi-1) #:select (fold first last))
   #:use-module (srfi srfi-26)
   #:use-module ((srfi srfi-69) #:select (hash-table-keys))
@@ -10,34 +9,35 @@
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
-  #:use-module (griddy core static)
-  #:use-module (griddy core spatial)
+  #:use-module (griddy core world)
+  #:use-module (griddy core road)
   #:use-module (griddy core location)
   #:use-module (griddy core actor)
-  #:export (
-            <point-like>
-            <route>
-            <world>
-            add!
-            connect-all!
+  #:use-module (griddy core spatial)
+  #:duplicates (merge-generics)
+  #:export (connect-all!
             connect-by-rank!
-            get-actors
             get-junction-lanes
-            get-road-junctions
-            get-road-lanes
-            get-road-segments
             get-segment-lane
-            link!
-            )
+            link!)
   #:re-export (
-               ;; (griddy core static)
+               ;; (griddy core world)
+               <world>
+               <static-item>
+               add!
+               get-actors
+
+               ;; (griddy core road)
+               <road-component>
                <road-junction>
                <road-segment>
                <road-lane>
                <road-lane/segment>
                <road-lane/junction>
-               <static>
                get-lanes
+               get-road-junctions
+               get-road-lanes
+               get-road-segments
 
                ;; (griddy core location)
                <location>
@@ -65,28 +65,6 @@
 
 (util:extend-primitives!)
 (math:extend-primitives!)
-
-(define-class <world> ()
-  (static-items ;; roads, etc
-   #:init-thunk list))
-
-(define-method (get-road-lanes (world <world>))
-  (filter (cut is-a? <> <road-lane>)
-          (ref world 'static-items)))
-
-(define-method (get-road-junctions (world <world>))
-  (filter (cut is-a? <> <road-junction>)
-          (ref world 'static-items)))
-
-(define-method (get-road-segments (world <world>))
-  (filter (cut is-a? <> <road-segment>)
-          (ref world 'static-items)))
-
-(define-method (get-actors (world <world>))
-  (define (into-actors container actors)
-    (append actors (ref container 'actors)))
-  (append (fold into-actors (list) (get-road-lanes world))
-          (fold into-actors (list) (get-road-segments world))))
 
 ;; -----------------------------------------------------------------------------
 (define-method (get-direction (incoming-or-outgoing <symbol>)
@@ -224,17 +202,3 @@
          (curve    (make-bezier-curve p0 p1 p2 p3)))
     (set! (ref junction-lane 'junction) junction)
     (set! (ref junction-lane 'curve) curve)))
-
-(define-method (add! (world <world>) (static-item <static>))
-  (insert! (ref world 'static-items) static-item))
-
-(define-method (add! (world <world>) (segment <road-segment>))
-  (cond
-   ((or (null? (ref segment 'junction 'beg))
-        (null? (ref segment 'junction 'end)))
-    (throw 'unlinked-road-segment))
-   ((and (null? (ref segment 'lanes 'forw))
-         (null? (ref segment 'lanes 'back)))
-    (throw 'road-segment-has-no-lanes))
-   (else
-    (next-method))))
