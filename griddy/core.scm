@@ -26,6 +26,7 @@
                <static-item>
                add!
                get-actors
+               get-static-items
 
                ;; (griddy core road)
                <road-component>
@@ -35,9 +36,6 @@
                <road-lane/segment>
                <road-lane/junction>
                get-lanes
-               get-road-junctions
-               get-road-lanes
-               get-road-segments
 
                ;; (griddy core location)
                <location>

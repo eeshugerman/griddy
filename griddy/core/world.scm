@@ -8,7 +8,8 @@
            <static-item>
            <actor-container>
            get-actors
-           add!))
+           add!
+           get-static-items))
 
 (define-class <static-item> ())
 (define-class <actor-container> ())
@@ -27,3 +28,11 @@
         (list)
         (filter (cut is-a? <> <actor-container>)
                 (ref world 'static-items))))
+
+(define-method (get-static-items (world <world>))
+  (ref world 'static-items))
+
+(define-method (get-static-items (world <world>) (type <class>))
+  (filter (cut is-a? <> type)
+          (ref world 'static-items)))
+

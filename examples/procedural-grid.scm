@@ -66,7 +66,7 @@
 (define (add-actors! world)
   (random-source-randomize! default-random-source)
   (let* ((actors       (list-tabulate 100 (lambda (_) (make <actor>))))
-         (segments     (get-road-segments world))
+         (segments     (get-static-items world <road-segment>))
          (num-segments (length segments))
          (random-location
           (lambda ()

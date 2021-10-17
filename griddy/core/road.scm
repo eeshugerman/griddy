@@ -18,10 +18,7 @@
             <road-lane/junction>
             add!
             get-lanes
-            get-lane-count
-            get-road-lanes
-            get-road-junctions
-            get-road-segments))
+            get-lane-count))
 
 (util:extend-primitives!)
 (math:extend-primitives!)
@@ -109,15 +106,3 @@
     (throw 'road-segment-has-no-lanes))
    (else
     (next-method))))
-
-(define-method (get-road-lanes (world <world>))
-  (filter (cut is-a? <> <road-lane>)
-          (ref world 'static-items)))
-
-(define-method (get-road-junctions (world <world>))
-  (filter (cut is-a? <> <road-junction>)
-          (ref world 'static-items)))
-
-(define-method (get-road-segments (world <world>))
-  (filter (cut is-a? <> <road-segment>)
-          (ref world 'static-items)))

@@ -58,9 +58,9 @@
     world))
 
 (define (add-actors! world)
-  (let* ((lane-1-1 (fifth (get-road-lanes world)))
-         (lane-2-1 (fourth (get-road-lanes world)))
-         (lane-2-2 (third (get-road-lanes world)))
+  (let* ((lane-1-1 (fifth  (get-static-items world <road-lane>)))
+         (lane-2-1 (fourth (get-static-items world <road-lane>)))
+         (lane-2-2 (third  (get-static-items world <road-lane>)))
 
          (actor-1 (make <actor>))
          (location-1
