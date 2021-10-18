@@ -82,7 +82,7 @@
     (for-each
      (lambda (actor)
        (link! actor (random-location))
-       (agenda-push! actor `(sleep-for ,(random-integer 500)))
+       (agenda-push! actor `(sleep-for ,(random-integer 300)))
        (agenda-push! actor `(travel-to ,(random-location))))
      actors)))
 
