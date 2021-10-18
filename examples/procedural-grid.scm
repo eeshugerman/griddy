@@ -24,6 +24,10 @@
          (add! world junction)
          junction)))
 
+    ;; TODO: not actually using the segments array at all...
+    ;; just use nested loops or implement something like
+    ;; https://docs.python.org/3/library/itertools.html#itertools.product
+    ;; to get tuples
     (array-index-map!
      segments
      (lambda (i j k)
