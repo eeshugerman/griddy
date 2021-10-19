@@ -52,17 +52,16 @@
         (car args)
         (cdr args)))
 
-(define (griddy:+ . args)
-  (fold
-   (match-lambda*
-     [((? vec2? a) (? vec2? b))
-      (vec2+ a b)]
-     [((? number? a) (? number? b))
-      ((@ (guile) +) a b)]
-     [(a b)
-      (throw 'type-error 'griddy:+ a b)])
-   (car args)
-   (cdr args)))
+(define-method (griddy:+ (a <vec2>) (b <vec2>))
+  (vec2+ a b))
+
+(define-method (griddy:+ (a <number>) (b <number>))
+  (+ a b))
+
+(define-method (griddy:+ . args)
+  (fold griddy:+
+        (car args)
+        (cdr args)))
 
 (define (griddy:- . args)
   (apply griddy:+ (cons (car args)

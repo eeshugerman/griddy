@@ -12,8 +12,7 @@
 (define (make-skeleton)
   (let* ((world (make <world>))
          (n 5)
-         (junctions (make-array *unspecified* n n))
-         (segments (make-array *unspecified* 2 n n)))
+         (junctions (make-array *unspecified* n n)))
 
     (array-index-map!
      junctions
@@ -24,44 +23,48 @@
          (add! world junction)
          junction)))
 
-    ;; TODO: not actually using the segments array at all...
-    ;; just use nested loops or implement something like
-    ;; https://docs.python.org/3/library/itertools.html#itertools.product
-    ;; to get tuples
-    (array-index-map!
-     segments
-     (lambda (i j k)
-       (if (or (and (= i 0) (= k (- n 1)))
-               (and (= i 1) (= j (- n 1))))
-           #f
-           (let* ((junction-1 (array-ref junctions j k))
-                  (junction-2 (if (= i 0)
-                                  (array-ref junctions j (+ k 1))
-                                  (array-ref junctions (+ j 1) k)))
-                  (segment (make <road-segment>))
-                  (lane-1 (make <road-lane/segment> #:direction 'forw))
-                  (lane-2 (make <road-lane/segment> #:direction 'back))
-                  (lane-3 (make <road-lane/segment> #:direction 'forw))
-                  (lane-4 (make <road-lane/segment> #:direction 'back)))
+    (define (add-segments! dim i j)
+      (if (or (and (eq? dim 'i) (= j (- n 1)))
+              (and (eq? dim 'j) (= i (- n 1))))
+          #f
+          (let* ((junction-1 (array-ref junctions i j))
+                 (junction-2 (if (eq? dim 'i)
+                                 (array-ref junctions i (+ j 1))
+                                 (array-ref junctions (+ i 1) j)))
+                 (segment (make <road-segment>))
+                 (lane-1 (make <road-lane/segment> #:direction 'forw))
+                 (lane-2 (make <road-lane/segment> #:direction 'back))
+                 (lane-3 (make <road-lane/segment> #:direction 'forw))
+                 (lane-4 (make <road-lane/segment> #:direction 'back)))
 
-             (link! junction-1 segment junction-2)
-             (link! lane-1 segment)
-             (link! lane-2 segment)
-             (add! world segment)
-             (add! world lane-1)
-             (add! world lane-2)
+            (link! junction-1 segment junction-2)
+            (link! lane-1 segment)
+            (link! lane-2 segment)
+            (add! world segment)
+            (add! world lane-1)
+            (add! world lane-2)
 
-             (when (and (= i 0) (even? j))
-               (let* ((up (= 0 (remainder j 4)))
-                      (lane (if up lane-3 lane-4)))
-                 (link! lane segment)
-                 (add! world lane)))
+            (when (and (eq? dim 'i) (even? i))
+              (let* ((up (= 0 (remainder i 4)))
+                     (lane (if up lane-3 lane-4)))
+                (link! lane segment)
+                (add! world lane)))
 
-             (when (and (= i 1) (even? k))
-               (let* ((up (= 0 (remainder k 4)))
-                      (lane (if up lane-3 lane-4)))
-                 (link! lane segment)
-                 (add! world lane)))))))
+            (when (and (eq? dim 'j) (even? j))
+              (let* ((up (= 0 (remainder j 4)))
+                     (lane (if up lane-3 lane-4)))
+                (link! lane segment)
+                (add! world lane))))))
+    (for-each
+     (lambda (dim)
+       (for-each
+        (lambda (i)
+          (for-each
+           (lambda (j)
+             (add-segments! dim i j))
+           (iota n)))
+        (iota n)))
+     '(i j))
 
     (array-for-each (cut connect-by-rank! <> world) junctions)
 
