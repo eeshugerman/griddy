@@ -9,8 +9,9 @@
 ```shell
 GUIX_EXTRA_PROFILES=$HOME/.guix-extra-profiles  # typical yet arbitrary value. may need to be created.
 GUIX_PROFILE=$GUIX_EXTRA_PROFILES/griddy
-guix pull --profile $GUIX_PROFILE --channels channels-spec.scm
-guix package --profile $GUIX_PROFILE --manifest manifest.scm
+guix pull --profile=$GUIX_PROFILE --channels=channels-spec.scm
+guix environment # is this necessary? should it be?
+guix package --profile=$GUIX_PROFILE --manifest=manifest.scm
 ```
 ### activate the environment
 #### with direnv

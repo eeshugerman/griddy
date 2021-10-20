@@ -4,6 +4,7 @@
   #:use-module (srfi srfi-69)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
+  #:use-module (pfds bbtrees)
   #:export (extend
             extend!
             flip
@@ -14,6 +15,10 @@
             ref
             ref/default
             util:extend-primitives!))
+
+(define-macro (util:extend-primitives!)
+  '(define-syntax-rule (set! args ...)
+     (griddy:set! args ...)))
 
 (define neq? (negate eq?))
 
@@ -113,6 +118,14 @@
     ((forw) if-forw)
     ((back) if-back)))
 
-(define-macro (util:extend-primitives!)
-  '(define-syntax-rule (set! args ...)
-     (griddy:set! args ...)))
+(define (bbtree-find bbtree min max)
+  (bbtree-traverse
+   (lambda (key value left right base)
+     (cond [(< key min)
+            (right base)]
+           [(<= key max)
+            (right (left (cons value base)))]
+           [(> key max)
+            (left base)]))
+   (list)
+   bbtree))

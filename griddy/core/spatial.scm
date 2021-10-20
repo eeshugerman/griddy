@@ -158,7 +158,7 @@
      (get-pos lane 'beg)))
 
 (define-method (get-tangent-vec (segment <road-segment>))
-                                        ; can't use `get-vec' because recursive loop
+  ; can't use `get-vec' because recursive loop
   (vec2-normalize (- (ref segment 'junction 'end 'pos)
                      (ref segment 'junction 'beg 'pos))))
 
