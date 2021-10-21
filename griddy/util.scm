@@ -2,9 +2,9 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
+  #:use-module (pfds bbtrees)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
-  #:use-module (pfds bbtrees)
   #:export (extend
             extend!
             flip
@@ -69,6 +69,10 @@
                        slot
                        default))))
 
+(define (mutable? container)
+  (and (record? container)
+       (not (bbtree? container))))
+
 (define (poly-set! obj key val)
   (cond
    ((list? obj)
@@ -77,6 +81,20 @@
     (hash-table-set! obj key val))
    (else
     (slot-set! obj key val))))
+
+(define (poly-set obj key val)
+  (cond
+   ((bbtree? obj)
+    (bbtree-set obj key val))))
+
+(define-syntax set-outer!
+  (syntax-rules (ref)
+    ((_ (ref obj slots ... slot) key val)
+     (poly-set! (ref obj slots ...)
+                slot
+                (poly-set (ref obj slots ... slot)
+                          key
+                          val)))))
 
 (define-syntax griddy:set!
   (syntax-rules (ref)

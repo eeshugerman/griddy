@@ -6,6 +6,7 @@
   #:use-module (oop goops)
   #:use-module (chickadee math vector)
   #:use-module (chickadee math bezier)
+  #:use-module (pfds bbtrees)
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
@@ -171,7 +172,10 @@
 
 (define-method (link! (actor <actor>) (loc <location/on-road>))
   (set! (ref actor 'location) loc)
-  (insert! (ref loc 'road-lane 'actors) actor))
+  (set! (ref loc 'road-lane 'actors)
+        (bbtree-set (ref loc 'road-lane 'actors)
+                    (ref actor 'location 'pos-param)
+                    actor)))
 
 (define-method (link! (in-lane <road-lane/segment>)
                       (junction-lane <road-lane/junction>)

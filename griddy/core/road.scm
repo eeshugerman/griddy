@@ -3,12 +3,14 @@
   #:use-module (srfi srfi-69)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
+  #:use-module (pfds bbtrees)
   #:use-module (chickadee math bezier)
   #:use-module (chickadee math vector)
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy math)
   #:use-module (griddy core world)
+  #:use-module (griddy core actor)
   #:duplicates (merge-generics)
   #:export (<road-component>
             <road-junction>
@@ -29,7 +31,7 @@
 
 (define-class <road-lane> (<road-component> <actor-container>)
   (actors
-   #:init-thunk list))
+   #:init-form (make-bbtree <)))
 
 (define-class <road-lane/segment> (<road-lane>)
   segment
@@ -94,6 +96,16 @@
 (define-method (get-lane-count (segment <road-segment>) (direction <symbol>))
   (ref segment 'lane-count direction))
 
+(define-method (get-actors (container <actor-container>))
+  (throw 'not-implemented container))
+
+(define-method (get-actors (segment <road-segment>))
+  (ref segment 'actors))
+
+(define-method (get-actors (lane <road-lane>))
+  (bbtree-fold (lambda (key val acc) (cons val acc))
+               (list)
+               (ref lane 'actors)))
 
 ;; why does this throw warning even with #:duplicates (merge-generics)?
 (define-method (add! (world <world>) (segment <road-segment>))

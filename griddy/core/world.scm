@@ -23,7 +23,7 @@
 
 (define-method (get-actors (world <world>))
   (define (into-actors container actors)
-    (append actors (ref container 'actors)))
+    (append actors (get-actors container)))
   (fold into-actors
         (list)
         (filter (cut is-a? <> <actor-container>)
