@@ -44,15 +44,10 @@
             (add! world lane-1)
             (add! world lane-2)
 
-            (when (and (eq? dim 'i) (even? i))
-              (let* ((up (= 0 (remainder i 4)))
-                     (lane (if up lane-3 lane-4)))
-                (link! lane segment)
-                (add! world lane)))
-
-            (when (and (eq? dim 'j) (even? j))
-              (let* ((up (= 0 (remainder j 4)))
-                     (lane (if up lane-3 lane-4)))
+            (let* ((dim-val (match dim ('i i) ('j j)))
+                   (up      (= 0 (remainder dim-val 4)))
+                   (lane    (if up lane-3 lane-4)))
+              (when (even? dim-val)
                 (link! lane segment)
                 (add! world lane))))))
     (for-each
@@ -74,14 +69,12 @@
   (random-source-randomize! default-random-source)
   (let* ((actors       (list-tabulate 100 (lambda (_) (make <actor>))))
          (segments     (get-static-items world <road-segment>))
-         (num-segments (length segments))
          (random-location
           (lambda ()
-            (let* ((segment     (list-ref segments (random-integer num-segments)))
-                   (side        (if (random-bool) 'forw 'back))
-                   (pos-param   ((if (random-bool) + -)
-                                 1/2
-                                 (* 1/4 (random-real)))))
+            (let* ((segment   (list-ref segments
+                                        (random-integer (length segments))))
+                   (side      (if (random-bool) 'forw 'back))
+                   (pos-param (+ 1/4 (* 1/2 (random-real)))))
               (make <location/off-road>
                 #:road-segment segment
                 #:road-side-direction side

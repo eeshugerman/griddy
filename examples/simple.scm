@@ -35,4 +35,5 @@
             #:pos-param 0.75)))
     (link! actor init-location)
     (agenda-push! actor `(travel-to ,dest-location))))
+
 (simulate make-skeleton add-actors!)
