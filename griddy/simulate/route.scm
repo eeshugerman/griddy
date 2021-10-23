@@ -46,28 +46,41 @@
          (lane->route-step (cut list 'turn-onto <>))
          (pos-param->route-step (cut list 'arrive-at <>)))
     (extend (map lane->route-step (cdr lanes))
-              (pos-param->route-step (ref dest 'pos-param)))))
+            (pos-param->route-step (ref dest 'pos-param)))))
 
-(define* (get-pos-param-delta
+(define* (get-pos-param-next
           actor
           #:key
+          (current   (ref actor 'location 'pos-param))
           (time-step *simulate/time-step*)
           (speed     (ref actor 'max-speed))
           (road-lane (ref actor 'location 'road-lane)))
-  (* speed time-step (recip (get-length road-lane))))
+
+  ;; todo: distinguish draw size and actual size
+  (let* ((tailgate-buffer    (/ (* 2 *actor/size*)
+                                (get-length road-lane)))
+         (delta-unobstructed (* speed
+                                time-step
+                                (recip (get-length road-lane))))
+         (next     (+ current delta-unobstructed))
+         (obstacle (bbtree-find-min (ref road-lane 'actors)
+                                    current
+                                    (+ next tailgate-buffer))))
+    (if (null? obstacle)
+        next
+        (- (ref obstacle 'location 'pos-param)
+           tailgate-buffer))))
 
 (define (route-step/arrive-at$ ++ actor pos-param-target)
-  (let* ((lane-current        (ref actor 'location 'road-lane))
-         (direction-current   (ref lane-current 'direction))
-         (pos-param-current   (ref actor 'location 'pos-param))
-         (pos-param-delta-max (get-pos-param-delta actor))
-         (done                (>= pos-param-delta-max
-                                  (- pos-param-target
-                                     pos-param-current)))
-         (pos-param-next      (if done
-                                  pos-param-target
-                                  (+ pos-param-current
-                                     pos-param-delta-max))))
+  (let* ((lane-current         (ref actor 'location 'road-lane))
+         (direction-current    (ref lane-current 'direction))
+         (pos-param-current    (ref actor 'location 'pos-param))
+         (pos-param-next-naive (get-pos-param-next actor))
+         (done                 (>= pos-param-next-naive
+                                   pos-param-target))
+         (pos-param-next       (if done
+                                   pos-param-target
+                                   pos-param-next-naive)))
     (when done
       (route-pop! (++ actor)))
     (link! (++ actor) (make <location/on-road>
@@ -77,19 +90,18 @@
 (define (route-step/turn-onto$ ++ actor lane-next)
   (let* ((lane-current          (ref actor 'location 'road-lane))
          (pos-param-current     (ref actor 'location 'pos-param))
-         (pos-param-delta       (get-pos-param-delta actor))
-         (pos-param-next-naive  (+ pos-param-current pos-param-delta))
+         (pos-param-next-naive  (get-pos-param-next actor))
          (done                  (>= pos-param-next-naive 1))
          (pos-param-next
           (if done
-              (let* ((fraction-time-spent
-                      (/ (- 1 pos-param-current) pos-param-delta))
-                     (time-remaining
-                      (* (- 1 fraction-time-spent)
-                         *simulate/time-step*)))
-                (get-pos-param-delta actor
-                                     #:time-step time-remaining
-                                     #:road-lane lane-next))
+              (let* ((time-spent      (/ (- 1 pos-param-current)
+                                         (ref actor 'max-speed)))
+                     (time-remaining  (- *simulate/time-step*
+                                         time-spent)))
+                (get-pos-param-next actor
+                                    #:current 0
+                                    #:time-step time-remaining
+                                    #:road-lane lane-next))
               pos-param-next-naive)))
     (when done
       (route-pop! (++ actor)))

@@ -1,4 +1,5 @@
 (use-modules (oop goops)
+             (pipe)
              (ice-9 match)
              (srfi srfi-1)
              (srfi srfi-26)
@@ -67,12 +68,19 @@
 
 (define (add-actors! world)
   (random-source-randomize! default-random-source)
-  (let* ((actors       (list-tabulate 100 (lambda (_) (make <actor>))))
-         (segments     (get-static-items world <road-segment>))
+  (let* ((make-actor
+          (lambda (_)
+            (make <actor> #:max-speed (+ 30 (* (random-integer 30))))))
+         (actors
+          (list-tabulate 100 make-actor))
+         (segments
+          (get-static-items world <road-segment>))
          (random-location
           (lambda ()
-            (let* ((segment   (list-ref segments
-                                        (random-integer (length segments))))
+            (let* ((segment   (->> segments
+                                   (length)
+                                   (random-integer)
+                                   (list-ref segments)))
                    (side      (if (random-bool) 'forw 'back))
                    (pos-param (+ 1/4 (* 1/2 (random-real)))))
               (make <location/off-road>
@@ -86,4 +94,4 @@
        (agenda-push! actor `(travel-to ,(random-location))))
      actors)))
 
-(simulate make-skeleton add-actors! #:width 700 #:height 700 #:duration 30)
+(simulate make-skeleton add-actors! #:width 700 #:height 700 #:duration 60)

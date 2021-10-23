@@ -5,7 +5,8 @@
   #:use-module (pfds bbtrees)
   #:use-module (oop goops)
   #:use-module (ice-9 match)
-  #:export (extend
+  #:export (bbtree-find-min
+            extend
             extend!
             flip
             griddy:set!
@@ -136,14 +137,26 @@
     ((forw) if-forw)
     ((back) if-back)))
 
-(define (bbtree-find bbtree min max)
+(define (bbtree-find bbtree low high)
   (bbtree-traverse
    (lambda (key value left right base)
-     (cond [(< key min)
+     (cond [(< key low)
             (right base)]
-           [(<= key max)
+           [(<= key high)
             (right (left (cons value base)))]
-           [(> key max)
+           [(> key high)
             (left base)]))
    (list)
+   bbtree))
+
+(define (bbtree-find-min bbtree low high)
+  (bbtree-traverse
+   (lambda (key value left right base)
+     (cond [(<= key low)
+            (right base)]
+           [(<= key high)
+            (left value)]
+           [(> key high)
+            (left base)]))
+   '()
    bbtree))
