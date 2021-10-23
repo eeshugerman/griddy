@@ -74,13 +74,13 @@
          (actors
           (list-tabulate 100 make-actor))
          (segments
-          (get-static-items world <road-segment>))
+          (list->array 1 (get-static-items world <road-segment>)))
          (random-location
           (lambda ()
             (let* ((segment   (->> segments
-                                   (length)
+                                   (array-length)
                                    (random-integer)
-                                   (list-ref segments)))
+                                   (array-ref segments)))
                    (side      (if (random-bool) 'forw 'back))
                    (pos-param (+ 1/4 (* 1/2 (random-real)))))
               (make <location/off-road>

@@ -3,6 +3,7 @@
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
+  #:use-module (pipe)
   #:use-module (chickadee data path-finding)
   #:use-module (griddy constants)
   #:use-module (griddy util)
@@ -87,27 +88,49 @@
                         #:pos-param (++ pos-param-next)
                         #:road-lane (++ lane-current)))))
 
-(define (route-step/turn-onto$ ++ actor lane-next)
+(define (route-step/turn-onto$ ++ actor lane-target)
   (let* ((lane-current          (ref actor 'location 'road-lane))
          (pos-param-current     (ref actor 'location 'pos-param))
          (pos-param-next-naive  (get-pos-param-next actor))
          (done                  (>= pos-param-next-naive 1))
-         (pos-param-next
-          (if done
-              (let* ((time-spent      (/ (- 1 pos-param-current)
-                                         (ref actor 'max-speed)))
-                     (time-remaining  (- *simulate/time-step*
-                                         time-spent)))
-                (get-pos-param-next actor
-                                    #:current 0
-                                    #:time-step time-remaining
-                                    #:road-lane lane-next))
-              pos-param-next-naive)))
-    (when done
-      (route-pop! (++ actor)))
 
+         (junction-full?        (lambda (junction)
+                                  (->> junction
+                                       (get-lanes)
+                                       (map get-actors)
+                                       (map length)
+                                       (apply +)
+                                       (< 0))))
+         (waiting
+          (and done
+               (is-a? lane-target <road-lane/junction>)
+               (junction-full? (ref lane-target 'junction))))
+
+         (pos-param-next
+          (cond
+           (waiting pos-param-current)
+           (done
+            (let* ((time-spent      (/ (- 1 pos-param-current)
+                                       (ref actor 'max-speed)))
+                   (time-remaining  (- *simulate/time-step*
+                                       time-spent)))
+              (get-pos-param-next actor
+                                  #:current 0
+                                  #:time-step time-remaining
+                                  #:road-lane lane-target)))
+
+           (else pos-param-next-naive)))
+
+         (lane-next
+          (cond
+           (waiting lane-current)
+           (done lane-target)
+           (else lane-current))))
+
+    (when (and done (not waiting))
+      (route-pop! (++ actor)))
     (link! (++ actor) (make <location/on-road>
-                        #:road-lane (++ (if done lane-next lane-current))
+                        #:road-lane (++ lane-next)
                         #:pos-param (++ pos-param-next)))))
 
 (define-method (advance-on-route$ (++ <generic>) (actor <actor>))
