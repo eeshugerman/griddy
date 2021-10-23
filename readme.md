@@ -1,6 +1,9 @@
 # intro
 // TODO
 
+https://user-images.githubusercontent.com/25518211/138569989-890cc568-396b-4851-a06d-2189aca5ecc9.mp4
+
+
 # getting started
 ## dev environment setup
 - install guix
