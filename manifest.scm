@@ -4,4 +4,5 @@
    ;; https://hg.sr.ht/~bjoli/guile-threading-macros looks cooler
    ;; but isn't packaged in guix
    "guile-pipe"
-   "guile-pfds"))
+   "guile-pfds"
+   "guile-charting"))

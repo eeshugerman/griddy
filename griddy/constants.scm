@@ -36,5 +36,4 @@
   *actor/speed*                80
 
   *simulate/time-step*         1/15
-
   )

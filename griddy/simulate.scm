@@ -2,15 +2,19 @@
   #:duplicates (merge-generics)
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-69)
+  #:use-module (srfi srfi-19)
   #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (chickadee graphics path)
+  ;; #:use-module (chickadee)
   #:use-module (griddy constants)
   #:use-module (griddy util)
   #:use-module (griddy draw)
   #:use-module (griddy math)
   #:use-module (griddy core)
   #:use-module (griddy event-loop)
+  #:use-module (charting)
+  #:use-module (charting draw)
   #:use-module (griddy simulate route)
   #:export (simulate))
 
@@ -117,6 +121,17 @@
 (define update-times '())
 (define draw-times '())
 
+(define (current-time)
+  ((@ (srfi srfi-19) current-time) time-process))
+
+(define <time> (class-of (current-time)))
+(define-method (- (t0 <time>) (t1 <time>))
+  (time-difference t0 t1))
+
+(define (time-difference->seconds td)
+  (+ (time-second td)
+     (/ (time-nanosecond td) 1e9)))
+
 (define* (simulate make-skeleton add-actors!
                    #:key (width 500) (height 500) (duration #f))
   (define (load)
@@ -136,13 +151,15 @@
        (cut advance$ ++ <>)
        (get-actors world))
       (set! world world++)
-      (insert! update-times (- (current-time) t0))))
+      (insert! update-times
+               (time-difference->seconds (- (current-time) t0)))))
 
   (define (draw alpha)
     (define t0 (current-time))
     (draw-canvas skeleton-canvas)
     (draw-canvas (make-actors-canvas world))
-    (insert! draw-times (- (current-time) t0)))
+    (insert! draw-times
+             (time-difference->seconds (- (current-time) t0))))
 
   (define (quit)
     (define (avg l) (/ (apply + l) (length l)))
@@ -151,6 +168,24 @@
     (pk 'avg-update-time (exact->inexact (avg update-times)))
     (pk 'draw-count      (length draw-times))
     (pk 'update-count    (length update-times))
+
+    (define (enumerate l)
+      (let loop ((count 0)
+                 (acc '())
+                 (rest l))
+        (if (null? rest)
+            (reverse acc)
+            (loop (1+ count)
+               (acons count (car rest) acc)
+               (cdr rest)))))
+
+    (reset-colors!)
+    (make-scatter-plot
+     "times"
+     `(("update" ,@(enumerate (reverse update-times)))
+       ("draw"   ,@(enumerate (reverse draw-times))))
+     #:test-spacing 48
+     #:write-to-png "/home/elliott/tmp/foo.png")
     (abort-game))
 
   (run-game

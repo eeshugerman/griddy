@@ -72,7 +72,7 @@
           (lambda (_)
             (make <actor> #:max-speed (+ 30 (* (random-integer 30))))))
          (actors
-          (list-tabulate 100 make-actor))
+          (list-tabulate 80 make-actor))
          (segments
           (list->array 1 (get-static-items world <road-segment>)))
          (random-location
@@ -94,4 +94,4 @@
        (agenda-push! actor `(travel-to ,(random-location))))
      actors)))
 
-(simulate make-skeleton add-actors! #:width 700 #:height 700 #:duration 60)
+(simulate make-skeleton add-actors! #:width 700 #:height 700 #:duration 800)
