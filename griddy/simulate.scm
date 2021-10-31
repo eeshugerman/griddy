@@ -13,8 +13,6 @@
   #:use-module (griddy math)
   #:use-module (griddy core)
   #:use-module (griddy event-loop)
-  #:use-module (charting)
-  #:use-module (charting draw)
   #:use-module (griddy simulate route)
   #:export (simulate))
 
@@ -169,23 +167,6 @@
     (pk 'draw-count      (length draw-times))
     (pk 'update-count    (length update-times))
 
-    (define (enumerate l)
-      (let loop ((count 0)
-                 (acc '())
-                 (rest l))
-        (if (null? rest)
-            (reverse acc)
-            (loop (1+ count)
-               (acons count (car rest) acc)
-               (cdr rest)))))
-
-    (reset-colors!)
-    (make-scatter-plot
-     "times"
-     `(("update" ,@(enumerate (reverse update-times)))
-       ("draw"   ,@(enumerate (reverse draw-times))))
-     #:test-spacing 48
-     #:write-to-png "/home/elliott/tmp/foo.png")
     (abort-game))
 
   (run-game
