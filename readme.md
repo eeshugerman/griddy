@@ -20,7 +20,7 @@ guix package --profile=$GUIX_PROFILE --manifest=manifest.scm
 #### with direnv
 ```shell
 cd griddy
-direnv allow # only needed when prompted
+direnv allow # only needed first time, when prompted
 ```
 #### without direnv
 ```shell

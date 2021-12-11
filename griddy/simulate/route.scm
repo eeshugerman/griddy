@@ -33,7 +33,8 @@
     ;; TODO: not sure about this
     0)
 
-  (define (distance lane-1 lane-2)
+  (define-generic distance)
+  (define-method (distance (lane-1 <road-lane>) (lane-2 <road-lane>))
     "approximate cost of moving between nodes"
     (l2 (get-midpoint lane-1)
         (get-midpoint lane-2)))
