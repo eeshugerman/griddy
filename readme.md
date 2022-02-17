@@ -1,9 +1,13 @@
 # intro/implementation
-Griddy is a Guile library for (vehicular) traffic simulation, built with
-[Chickadee](https://dthompson.us/projects/chickadee.html). Initial conditions
+Griddy is a [Guile][guile] library for (vehicular) traffic simulation, built with
+[Chickadee][chickadee] and [GOOPS][goops]. Initial conditions
 are specified with two scheme procedures: `make-skeleton`, which builds the road
 network, and `add-actors!`, which does what it says (to the road network). See
 `examples/`.
+
+[guile]: https://www.gnu.org/software/guile/
+[chickadee]: https://dthompson.us/projects/chickadee.html
+[goops]: https://www.gnu.org/software/guile/manual/html_node/GOOPS.html
 
 Actors have a location and an agenda. A location is the road component they are
 on (typically a lane), and a relative position parameter. An agenda is a list of
