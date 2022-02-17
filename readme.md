@@ -1,8 +1,9 @@
 # intro/implementation
-Griddy is a (vehicular) traffic simulation/animation library. The initial
-conditions are specified with two scheme procedures: `make-skeleton`, which
-builds the road network, and `add-actors!`, which does what it says (to the road
-network). See `examples/`.
+Griddy is a Guile library for (vehicular) traffic simulation, built with
+[Chickadee](https://dthompson.us/projects/chickadee.html). Initial conditions
+are specified with two scheme procedures: `make-skeleton`, which builds the road
+network, and `add-actors!`, which does what it says (to the road network). See
+`examples/`.
 
 Actors have a location and an agenda. A location is the road component they are
 on (typically a lane), and a relative position parameter. An agenda is a list of
