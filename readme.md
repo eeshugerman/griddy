@@ -12,20 +12,19 @@ Griddy is deterministic; it sidesteps the "simultaneous events problem" by
 1. eschewing any stateful devices in modeling actor interaction (in other words,
    there are no slots or queues or the like between actors)
 1. building a new data structure for each iteration state instead of mutating a
-   single data structure.
+   single data structure
 
 To accomplish (2), a fresh road network is generated for each iteration by
-calling the `make-skeleton`. The next step is to place actors on the new
-network, and to do this we need some way to match up road components between the
-previous and next network, and that way, in this case, is a hack: the order in
-which road components are registered (`add!`ed) in `make-skeleton` is tracked.
-This approach is nice because it's easy/simple, but it has some drawbacks:
+calling `make-skeleton`. The next step is to place actors on the new network,
+and to do this we need some way to match up road components with the previous
+network, and how we do that is a hack: the order in which road components are
+registered (`add!`ed) in `make-skeleton` is tracked. This approach is nice
+because it's easy and simple, but it has some drawbacks:
 - `make-skeleton` must be deterministic within the scope of the simulation
 - building a fresh road network every iteration is maybe not super performant
   - using order-registered to match road components means this can't be
     parallelized (not that anything else is parallelized currently... but it
     _could_ be!)
-
 
 https://user-images.githubusercontent.com/25518211/138569989-890cc568-396b-4851-a06d-2189aca5ecc9.mp4
 
