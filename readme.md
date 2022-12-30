@@ -13,13 +13,7 @@ Actors have a location and an agenda. A location is the road component they are
 on (typically a lane), and a relative position parameter. An agenda is a list of
 tasks, namely `(travel-to <dest>)` or `(sleep-for <time>)`.
 
-Griddy is deterministic; it sidesteps the "simultaneous events problem" by
-1. eschewing any stateful devices in modeling actor interaction (in other words,
-   there are no slots or queues or the like between actors)
-1. building a new data structure for each iteration state instead of mutating a
-   single data structure
-
-To accomplish (2), a fresh road network is generated for each iteration by
+For better or worse, a fresh road network is generated for each iteration by
 calling `make-skeleton`. The next step is to place actors on the new network,
 and to do this we need some way to match up road components with the previous
 network, and how we do that is a hack: the order in which road components are
